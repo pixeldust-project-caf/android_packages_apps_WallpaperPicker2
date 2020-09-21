@@ -45,6 +45,7 @@ import com.android.wallpaper.asset.Asset;
 import com.android.wallpaper.model.Category;
 import com.android.wallpaper.module.InjectorProvider;
 import com.android.wallpaper.module.UserEventLogger;
+import com.android.wallpaper.util.DeepLinkUtils;
 import com.android.wallpaper.util.DisplayMetricsRetriever;
 import com.android.wallpaper.util.SizeCalculator;
 import com.android.wallpaper.widget.WallpaperPickerRecyclerViewAccessibilityDelegate;
@@ -88,6 +89,16 @@ public class CategorySelectorFragment extends Fragment {
          * Sets the title in the toolbar.
          */
         void setToolbarTitle(CharSequence title);
+
+        /**
+         * Fetches the wallpaper categories.
+         */
+        void fetchCategories();
+
+        /**
+         * Hides the {@link com.android.wallpaper.widget.BottomActionBar}.
+         */
+        void hideBottomActionBar();
     }
 
     private RecyclerView mImageGrid;
@@ -120,6 +131,12 @@ public class CategorySelectorFragment extends Fragment {
                 new WallpaperPickerRecyclerViewAccessibilityDelegate(
                         mImageGrid, (BottomSheetHost) getParentFragment(), getNumColumns()));
         getCategorySelectorFragmentHost().setToolbarTitle(getText(R.string.wallpaper_title));
+
+        if (!DeepLinkUtils.isDeepLink(getActivity().getIntent())) {
+            getCategorySelectorFragmentHost().fetchCategories();
+        }
+
+        getCategorySelectorFragmentHost().hideBottomActionBar();
 
         return view;
     }
@@ -246,7 +263,6 @@ public class CategorySelectorFragment extends Fragment {
             }
 
             getCategorySelectorFragmentHost().show(mCategory);
-            getCategorySelectorFragmentHost().setToolbarTitle(mCategory.getTitle());
         }
 
         /**
