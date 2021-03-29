@@ -64,6 +64,7 @@ import com.android.wallpaper.picker.MyPhotosStarter.PermissionChangedListener;
 import com.android.wallpaper.picker.individual.IndividualPickerFragment;
 import com.android.wallpaper.picker.individual.IndividualPickerFragment.ThumbnailUpdater;
 import com.android.wallpaper.picker.individual.IndividualPickerFragment.WallpaperDestinationCallback;
+import com.android.wallpaper.util.ActivityUtils;
 import com.android.wallpaper.util.DeepLinkUtils;
 import com.android.wallpaper.util.SizeCalculator;
 import com.android.wallpaper.util.WallpaperConnection;
@@ -280,7 +281,7 @@ public class CategoryFragment extends AppbarFragment
             return windowInsets;
         });
 
-        setUpToolbar(view);
+        setUpToolbar(view, ActivityUtils.isLaunchedFromSettings(getActivity().getIntent()));
 
         getChildFragmentManager()
                 .beginTransaction()
@@ -314,6 +315,7 @@ public class CategoryFragment extends AppbarFragment
 
     @Override
     protected void onBottomActionBarReady(BottomActionBar bottomActionBar) {
+        super.onBottomActionBarReady(bottomActionBar);
         mBottomActionBar = bottomActionBar;
         if (getFragmentHost().isNavigationTabsContained()) {
             return;
@@ -437,6 +439,11 @@ public class CategoryFragment extends AppbarFragment
     }
 
     @Override
+    public boolean isHostToolbarShown() {
+        return true;
+    }
+
+    @Override
     public void setToolbarTitle(CharSequence title) {
         setTitle(title);
     }
@@ -513,39 +520,19 @@ public class CategoryFragment extends AppbarFragment
     }
 
     /**
+     * Gets the {@link CategorySelectorFragment} which is attached to {@link CategoryFragment}.
+     */
+    public CategorySelectorFragment getCategorySelectorFragment() {
+        return mCategorySelectorFragment;
+    }
+
+    /**
      * Pops the child fragment from the stack if {@link CategoryFragment} is visible to the users.
      *
      * @return {@code true} if the child fragment is popped, {@code false} otherwise.
      */
     public boolean popChildFragment() {
         return isVisible() && getChildFragmentManager().popBackStackImmediate();
-    }
-
-    /**
-     * Inserts the given category into the categories list in priority order.
-     */
-    void addCategory(Category category, boolean loading) {
-        mCategorySelectorFragment.addCategory(category, loading);
-    }
-
-    void removeCategory(Category category) {
-        mCategorySelectorFragment.removeCategory(category);
-    }
-
-    void updateCategory(Category category) {
-        mCategorySelectorFragment.updateCategory(category);
-    }
-
-    void clearCategories() {
-        mCategorySelectorFragment.clearCategories();
-    }
-
-    /**
-     * Notifies the CategoryFragment that no further categories are expected so it may hide
-     * the loading indicator.
-     */
-    void doneFetchingCategories() {
-        mCategorySelectorFragment.doneFetchingCategories();
     }
 
     private boolean canShowCurrentWallpaper() {

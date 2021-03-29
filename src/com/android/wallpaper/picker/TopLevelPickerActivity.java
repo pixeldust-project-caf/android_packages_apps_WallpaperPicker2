@@ -73,6 +73,7 @@ import com.android.wallpaper.module.WallpaperPreferences;
 import com.android.wallpaper.module.WallpaperPreferences.PresentationMode;
 import com.android.wallpaper.module.WallpaperRotationRefresher;
 import com.android.wallpaper.module.WallpaperRotationRefresher.Listener;
+import com.android.wallpaper.picker.AppbarFragment.AppbarFragmentHost;
 import com.android.wallpaper.picker.CategoryFragment.CategoryFragmentHost;
 import com.android.wallpaper.picker.WallpaperDisabledFragment.WallpaperSupportLevel;
 import com.android.wallpaper.picker.individual.IndividualPickerFragment;
@@ -94,7 +95,7 @@ import java.util.List;
  */
 public class TopLevelPickerActivity extends BaseActivity implements WallpapersUiContainer,
         CurrentWallpaperBottomSheetPresenter, SetWallpaperErrorDialogFragment.Listener,
-        MyPhotosStarter, CategoryFragmentHost, BottomActionBarHost {
+        MyPhotosStarter, AppbarFragmentHost, CategoryFragmentHost, BottomActionBarHost {
 
     private static final String TAG_SET_WALLPAPER_ERROR_DIALOG_FRAGMENT =
             "toplevel_set_wallpaper_error_dialog";
@@ -238,8 +239,7 @@ public class TopLevelPickerActivity extends BaseActivity implements WallpapersUi
             return;
         }
 
-        CategoryFragment categoryFragment = getCategoryFragment();
-        if (categoryFragment != null && categoryFragment.popChildFragment()) {
+        if (fragment != null && fragment.getChildFragmentManager().popBackStackImmediate()) {
             return;
         }
         super.onBackPressed();
@@ -650,12 +650,13 @@ public class TopLevelPickerActivity extends BaseActivity implements WallpapersUi
 
     @Override
     @Nullable
-    public CategoryFragment getCategoryFragment() {
+    public CategorySelectorFragment getCategorySelectorFragment() {
         if (mDelegate.getFormFactor() != FormFactorChecker.FORM_FACTOR_MOBILE) {
             return null;
         }
         FragmentManager fm = getSupportFragmentManager();
-        return (CategoryFragment) fm.findFragmentById(R.id.fragment_container);
+        return ((CategoryFragment) fm.findFragmentById(
+                R.id.fragment_container)).getCategorySelectorFragment();
     }
 
     /**
@@ -1129,6 +1130,16 @@ public class TopLevelPickerActivity extends BaseActivity implements WallpapersUi
     @Override
     public BottomActionBar getBottomActionBar() {
         return findViewById(R.id.bottom_actionbar);
+    }
+
+    @Override
+    public void onUpArrowPressed() {
+        onBackPressed();
+    }
+
+    @Override
+    public boolean isUpArrowSupported() {
+        return true;
     }
 
     private interface AssetReceiver {
