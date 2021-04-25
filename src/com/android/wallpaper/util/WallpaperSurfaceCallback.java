@@ -28,9 +28,7 @@ import android.view.View;
 import android.widget.ImageView;
 
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
 
-import com.android.wallpaper.R;
 import com.android.wallpaper.module.Injector;
 import com.android.wallpaper.module.InjectorProvider;
 import com.android.wallpaper.module.PackageStatusNotifier;
@@ -67,8 +65,8 @@ public class WallpaperSurfaceCallback implements SurfaceHolder.Callback {
     private PackageStatusNotifier mPackageStatusNotifier;
 
     public WallpaperSurfaceCallback(Context context, View containerView,
-            SurfaceView wallpaperSurface, @Nullable  SurfaceListener listener) {
-        mContext = context;
+            SurfaceView wallpaperSurface, @Nullable SurfaceListener listener) {
+        mContext = context.getApplicationContext();
         mContainerView = containerView;
         mWallpaperSurface = wallpaperSurface;
         mListener = listener;
@@ -116,6 +114,9 @@ public class WallpaperSurfaceCallback implements SurfaceHolder.Callback {
      */
     public void cleanUp() {
         releaseHost();
+        if (mHomeImageWallpaper != null) {
+            mHomeImageWallpaper.setImageDrawable(null);
+        }
         mPackageStatusNotifier.removeListener(mAppStatusListener);
     }
 
@@ -143,7 +144,7 @@ public class WallpaperSurfaceCallback implements SurfaceHolder.Callback {
     private void setupSurfaceWallpaper(boolean forceClean) {
         mHomeImageWallpaper = new ImageView(mContext);
         mHomeImageWallpaper.setBackgroundColor(
-                ContextCompat.getColor(mContext, R.color.primary_color));
+                ResourceUtils.getColorAttr(mContext, android.R.attr.colorPrimary));
         mHomeImageWallpaper.measure(makeMeasureSpec(mContainerView.getWidth(), EXACTLY),
                 makeMeasureSpec(mContainerView.getHeight(), EXACTLY));
         mHomeImageWallpaper.layout(0, 0, mContainerView.getWidth(),
@@ -151,7 +152,7 @@ public class WallpaperSurfaceCallback implements SurfaceHolder.Callback {
         if (forceClean) {
             releaseHost();
             mHost = new SurfaceControlViewHost(mContext,
-                    mContext.getDisplay(), mWallpaperSurface.getHostToken());
+                    mContainerView.getDisplay(), mWallpaperSurface.getHostToken());
         }
         mHost.setView(mHomeImageWallpaper, mHomeImageWallpaper.getWidth(),
                 mHomeImageWallpaper.getHeight());

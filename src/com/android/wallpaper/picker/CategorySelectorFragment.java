@@ -43,10 +43,12 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.android.wallpaper.R;
 import com.android.wallpaper.asset.Asset;
 import com.android.wallpaper.model.Category;
+import com.android.wallpaper.model.CategoryProvider;
 import com.android.wallpaper.module.InjectorProvider;
 import com.android.wallpaper.module.UserEventLogger;
 import com.android.wallpaper.util.DeepLinkUtils;
 import com.android.wallpaper.util.DisplayMetricsRetriever;
+import com.android.wallpaper.util.ResourceUtils;
 import com.android.wallpaper.util.SizeCalculator;
 import com.android.wallpaper.widget.WallpaperPickerRecyclerViewAccessibilityDelegate;
 import com.android.wallpaper.widget.WallpaperPickerRecyclerViewAccessibilityDelegate.BottomSheetHost;
@@ -106,12 +108,9 @@ public class CategorySelectorFragment extends AppbarFragment {
          * Cleans up the listeners which will be notified when there's a package event.
          */
         void cleanUp();
-
-        /**
-         * Hides the {@link com.android.wallpaper.widget.BottomActionBar}.
-         */
-        void hideBottomActionBar();
     }
+
+    private final CategoryProvider mCategoryProvider;
 
     private RecyclerView mImageGrid;
     private CategoryAdapter mAdapter;
@@ -121,6 +120,7 @@ public class CategorySelectorFragment extends AppbarFragment {
 
     public CategorySelectorFragment() {
         mAdapter = new CategoryAdapter(mCategories);
+        mCategoryProvider = InjectorProvider.getInjector().getCategoryProvider(getContext());
     }
 
     @Nullable
@@ -130,14 +130,16 @@ public class CategorySelectorFragment extends AppbarFragment {
         View view = inflater.inflate(R.layout.fragment_category_selector, container,
                 /* attachToRoot= */ false);
         mImageGrid = view.findViewById(R.id.category_grid);
-        mImageGrid.addItemDecoration(new GridPaddingDecoration(
-                getResources().getDimensionPixelSize(R.dimen.grid_padding)));
+        mImageGrid.addItemDecoration(new GridPaddingDecoration(getResources().getDimensionPixelSize(
+                R.dimen.grid_item_category_padding_horizontal)));
 
         mTileSizePx = SizeCalculator.getCategoryTileSize(getActivity());
 
         mImageGrid.setAdapter(mAdapter);
 
-        GridLayoutManager gridLayoutManager = new GridLayoutManager(getActivity(), getNumColumns());
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(getActivity(),
+                getNumColumns() * CategorySpanSizeLookup.DEFAULT_CATEGORY_SPAN_SIZE);
+        gridLayoutManager.setSpanSizeLookup(new CategorySpanSizeLookup(mAdapter));
         mImageGrid.setLayoutManager(gridLayoutManager);
         mImageGrid.setAccessibilityDelegateCompat(
                 new WallpaperPickerRecyclerViewAccessibilityDelegate(
@@ -155,8 +157,15 @@ public class CategorySelectorFragment extends AppbarFragment {
             getCategorySelectorFragmentHost().fetchCategories();
         }
 
-        getCategorySelectorFragmentHost().hideBottomActionBar();
-
+        // For nav bar edge-to-edge effect.
+        view.findViewById(R.id.category_grid).setOnApplyWindowInsetsListener((v, windowInsets) -> {
+            v.setPadding(
+                    v.getPaddingLeft(),
+                    v.getPaddingTop(),
+                    v.getPaddingRight(),
+                    windowInsets.getSystemWindowInsetBottom());
+            return windowInsets.consumeSystemWindowInsets();
+        });
         return view;
     }
 
@@ -322,7 +331,10 @@ public class CategorySelectorFragment extends AppbarFragment {
             Asset thumbnail = mCategory.getThumbnail(getActivity().getApplicationContext());
             if (thumbnail != null) {
                 thumbnail.loadDrawable(getActivity(), mImageView,
-                        getResources().getColor(R.color.secondary_color));
+                        ResourceUtils.getColorAttr(
+                            getActivity(),
+                            android.R.attr.colorSecondary
+                        ));
             } else {
                 // TODO(orenb): Replace this workaround for b/62584914 with a proper way of
                 //  unloading the ImageView such that no incorrect image is improperly loaded upon
@@ -337,6 +349,31 @@ public class CategorySelectorFragment extends AppbarFragment {
         }
     }
 
+    private class FeaturedCategoryHolder extends CategoryHolder {
+
+        FeaturedCategoryHolder(View itemView) {
+            super(itemView);
+            CardView categoryView = itemView.findViewById(R.id.category);
+            categoryView.getLayoutParams().height =
+                    SizeCalculator.getFeaturedCategoryTileSize(getActivity()).y;
+        }
+    }
+
+    private class MyPhotosCategoryHolder extends CategoryHolder {
+
+        MyPhotosCategoryHolder(View itemView) {
+            super(itemView);
+            // Reuse the height of featured category since My Photos category & featured category
+            // have the same height in current UI design.
+            CardView categoryView = itemView.findViewById(R.id.category);
+            int height = SizeCalculator.getFeaturedCategoryTileSize(getActivity()).y;
+            categoryView.getLayoutParams().height = height;
+            // Use the height as the card corner radius for the "My photos" category
+            // for a stadium border.
+            categoryView.setRadius(height);
+        }
+    }
+
     /**
      * ViewHolder subclass for the loading indicator ("spinner") shown when categories are being
      * fetched.
@@ -346,7 +383,10 @@ public class CategorySelectorFragment extends AppbarFragment {
             super(view);
             ProgressBar progressBar = view.findViewById(R.id.loading_indicator);
             progressBar.getIndeterminateDrawable().setColorFilter(
-                    getResources().getColor(R.color.accent_color), PorterDuff.Mode.SRC_IN);
+                    ResourceUtils.getColorAttr(
+                            getActivity(),
+                            android.R.attr.colorAccent
+                    ), PorterDuff.Mode.SRC_IN);
         }
     }
 
@@ -355,6 +395,8 @@ public class CategorySelectorFragment extends AppbarFragment {
      */
     private class CategoryAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             implements MyPhotosStarter.PermissionChangedListener {
+        private static final int ITEM_VIEW_TYPE_MY_PHOTOS = 1;
+        private static final int ITEM_VIEW_TYPE_FEATURED_CATEGORY = 2;
         private static final int ITEM_VIEW_TYPE_CATEGORY = 3;
         private static final int ITEM_VIEW_TYPE_LOADING_INDICATOR = 4;
         private List<Category> mCategories;
@@ -367,6 +409,14 @@ public class CategorySelectorFragment extends AppbarFragment {
         public int getItemViewType(int position) {
             if (mAwaitingCategories && position == getItemCount() - 1) {
                 return ITEM_VIEW_TYPE_LOADING_INDICATOR;
+            }
+
+            if (position == 0) {
+                return ITEM_VIEW_TYPE_MY_PHOTOS;
+            }
+
+            if (mCategoryProvider.isFeaturedCategory(mCategories.get(position))) {
+                return ITEM_VIEW_TYPE_FEATURED_CATEGORY;
             }
 
             return ITEM_VIEW_TYPE_CATEGORY;
@@ -382,6 +432,14 @@ public class CategorySelectorFragment extends AppbarFragment {
                     view = layoutInflater.inflate(R.layout.grid_item_loading_indicator,
                             parent, /* attachToRoot= */ false);
                     return new LoadingIndicatorHolder(view);
+                case ITEM_VIEW_TYPE_MY_PHOTOS:
+                    view = layoutInflater.inflate(R.layout.grid_item_category,
+                            parent, /* attachToRoot= */ false);
+                    return new MyPhotosCategoryHolder(view);
+                case ITEM_VIEW_TYPE_FEATURED_CATEGORY:
+                    view = layoutInflater.inflate(R.layout.grid_item_category,
+                            parent, /* attachToRoot= */ false);
+                    return new FeaturedCategoryHolder(view);
                 case ITEM_VIEW_TYPE_CATEGORY:
                     view = layoutInflater.inflate(R.layout.grid_item_category,
                             parent, /* attachToRoot= */ false);
@@ -397,6 +455,8 @@ public class CategorySelectorFragment extends AppbarFragment {
             int viewType = getItemViewType(position);
 
             switch (viewType) {
+                case ITEM_VIEW_TYPE_MY_PHOTOS:
+                case ITEM_VIEW_TYPE_FEATURED_CATEGORY:
                 case ITEM_VIEW_TYPE_CATEGORY:
                     // Offset position to get category index to account for the non-category view
                     // holders.
@@ -457,7 +517,7 @@ public class CategorySelectorFragment extends AppbarFragment {
 
     private class GridPaddingDecoration extends RecyclerView.ItemDecoration {
 
-        private int mPadding;
+        private final int mPadding;
 
         GridPaddingDecoration(int padding) {
             mPadding = padding;
@@ -471,6 +531,16 @@ public class CategorySelectorFragment extends AppbarFragment {
                 outRect.left = mPadding;
                 outRect.right = mPadding;
             }
+
+            RecyclerView.ViewHolder viewHolder = parent.getChildViewHolder(view);
+            if (viewHolder instanceof MyPhotosCategoryHolder
+                    || viewHolder instanceof FeaturedCategoryHolder) {
+                outRect.bottom = getResources().getDimensionPixelSize(
+                        R.dimen.grid_item_featured_category_padding_bottom);
+            } else {
+                outRect.bottom = getResources().getDimensionPixelSize(
+                        R.dimen.grid_item_category_padding_bottom);
+            }
         }
     }
 
@@ -479,6 +549,8 @@ public class CategorySelectorFragment extends AppbarFragment {
      * of columns in the RecyclerView and all other items only take up a single span.
      */
     private class CategorySpanSizeLookup extends GridLayoutManager.SpanSizeLookup {
+        private static final int DEFAULT_CATEGORY_SPAN_SIZE = 2;
+
         CategoryAdapter mAdapter;
 
         private CategorySpanSizeLookup(CategoryAdapter adapter) {
@@ -487,13 +559,18 @@ public class CategorySelectorFragment extends AppbarFragment {
 
         @Override
         public int getSpanSize(int position) {
-            if (position < NUM_NON_CATEGORY_VIEW_HOLDERS
-                    || mAdapter.getItemViewType(position)
-                    == CategoryAdapter.ITEM_VIEW_TYPE_LOADING_INDICATOR) {
-                return getNumColumns();
+            if (position < NUM_NON_CATEGORY_VIEW_HOLDERS || mAdapter.getItemViewType(position)
+                    == CategoryAdapter.ITEM_VIEW_TYPE_LOADING_INDICATOR || mAdapter.getItemViewType(
+                    position) == CategoryAdapter.ITEM_VIEW_TYPE_MY_PHOTOS) {
+                return getNumColumns() * DEFAULT_CATEGORY_SPAN_SIZE;
             }
 
-            return 1;
+            if (mAdapter.getItemViewType(position)
+                    == CategoryAdapter.ITEM_VIEW_TYPE_FEATURED_CATEGORY) {
+                return getNumColumns() * DEFAULT_CATEGORY_SPAN_SIZE / 2;
+            }
+
+            return DEFAULT_CATEGORY_SPAN_SIZE;
         }
     }
 }

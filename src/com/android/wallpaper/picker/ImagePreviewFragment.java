@@ -48,7 +48,6 @@ import androidx.annotation.Nullable;
 import androidx.cardview.widget.CardView;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 
 import com.android.wallpaper.R;
@@ -57,12 +56,13 @@ import com.android.wallpaper.asset.CurrentWallpaperAssetVN;
 import com.android.wallpaper.model.WallpaperInfo;
 import com.android.wallpaper.module.WallpaperPersister.Destination;
 import com.android.wallpaper.module.WallpaperPersister.SetWallpaperCallback;
+import com.android.wallpaper.util.ResourceUtils;
 import com.android.wallpaper.util.ScreenSizeCalculator;
 import com.android.wallpaper.util.SizeCalculator;
 import com.android.wallpaper.util.WallpaperCropUtils;
 import com.android.wallpaper.widget.BottomActionBar;
 import com.android.wallpaper.widget.BottomActionBar.AccessibilityCallback;
-import com.android.wallpaper.widget.LockScreenPreviewer;
+import com.android.wallpaper.widget.LockScreenPreviewer2;
 import com.android.wallpaper.widget.WallpaperColorsLoader;
 import com.android.wallpaper.widget.WallpaperInfoView;
 
@@ -96,8 +96,10 @@ public class ImagePreviewFragment extends PreviewFragment {
     private WorkspaceSurfaceHolderCallback mWorkspaceSurfaceCallback;
     private SurfaceView mWallpaperSurface;
     private ViewGroup mLockPreviewContainer;
-    private LockScreenPreviewer mLockScreenPreviewer;
+    private LockScreenPreviewer2 mLockScreenPreviewer;
     private WallpaperInfoView mWallpaperInfoView;
+
+    protected boolean mSkipPreviewRendering;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -143,12 +145,12 @@ public class ImagePreviewFragment extends PreviewFragment {
                 getContext());
         mWallpaperSurface = mContainer.findViewById(R.id.wallpaper_surface);
         mLockPreviewContainer = mContainer.findViewById(R.id.lock_screen_preview_container);
-        mLockScreenPreviewer = new LockScreenPreviewer(getLifecycle(), getContext(),
+        mLockScreenPreviewer = new LockScreenPreviewer2(getLifecycle(), getContext(),
                 mLockPreviewContainer);
 
-        TabLayout tabs = inflater.inflate(R.layout.full_preview_tabs,
-                view.findViewById(R.id.toolbar_tabs_container))
-                .findViewById(R.id.full_preview_tabs);
+        TabLayout tabs = view.findViewById(R.id.pill_tabs);
+        tabs.addTab(tabs.newTab().setText(getContext().getString(R.string.home_screen_message)));
+        tabs.addTab(tabs.newTab().setText(getContext().getString(R.string.lock_screen_message)));
         tabs.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
@@ -162,7 +164,7 @@ public class ImagePreviewFragment extends PreviewFragment {
             public void onTabReselected(TabLayout.Tab tab) {}
         });
 
-        // The TabLayout only contains below tabs, see: full_preview_tabs.xml
+        // The TabLayout only contains below tabs
         // 0. Home tab
         // 1. Lock tab
         tabs.getTabAt(mViewAsHome ? 0 : 1).select();
@@ -173,8 +175,11 @@ public class ImagePreviewFragment extends PreviewFragment {
         ((CardView) mWorkspaceSurface.getParent())
                 .setRadius(SizeCalculator.getPreviewCornerRadius(
                         activity, mContainer.getMeasuredWidth()));
-        renderImageWallpaper();
-        renderWorkspaceSurface();
+
+        if (!mSkipPreviewRendering) {
+            renderImageWallpaper();
+            renderWorkspaceSurface();
+        }
 
         // Trim some memory from Glide to make room for the full-size image in this fragment.
         Glide.get(activity).setMemoryCategory(MemoryCategory.LOW);
@@ -185,9 +190,11 @@ public class ImagePreviewFragment extends PreviewFragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        WallpaperColorsLoader.getWallpaperColors(getContext(),
-                mWallpaper.getThumbAsset(getContext()),
-                mLockScreenPreviewer::setColor);
+        if (!mSkipPreviewRendering) {
+            WallpaperColorsLoader.getWallpaperColors(getContext(),
+                    mWallpaper.getThumbAsset(getContext()),
+                    mLockScreenPreviewer::setColor);
+        }
     }
 
     @Override
@@ -209,7 +216,10 @@ public class ImagePreviewFragment extends PreviewFragment {
         if (mLoadingProgressBar != null) {
             mLoadingProgressBar.hide();
         }
-        mFullResImageView.recycle();
+
+        if (mFullResImageView != null) {
+            mFullResImageView.recycle();
+        }
 
         mWallpaperSurfaceCallback.cleanUp();
         mWorkspaceSurfaceCallback.cleanUp();
@@ -277,6 +287,8 @@ public class ImagePreviewFragment extends PreviewFragment {
      * initializing a zoom-scroll observer and click listener.
      */
     private void initFullResView() {
+        if (getContext() == null || mSkipPreviewRendering) return;
+
         // Minimum scale will only be respected under this scale type.
         mFullResImageView.setMinimumScaleType(SubsamplingScaleImageView.SCALE_TYPE_CUSTOM);
         // When we set a minimum scale bigger than the scale with which the full image is shown,
@@ -286,7 +298,7 @@ public class ImagePreviewFragment extends PreviewFragment {
         // Set a solid black "page bitmap" so MosaicView draws a black background while waiting
         // for the image to load or a transparent one if a thumbnail already loaded.
         Bitmap backgroundBitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888);
-        int preColor = ContextCompat.getColor(getContext(), R.color.fullscreen_preview_background);
+        int preColor = ResourceUtils.getColorAttr(getActivity(), android.R.attr.colorSecondary);
         int color = (mLowResImageView.getDrawable() == null) ? preColor : Color.TRANSPARENT;
         backgroundBitmap.setPixel(0, 0, color);
         mFullResImageView.setImage(ImageSource.bitmap(backgroundBitmap));

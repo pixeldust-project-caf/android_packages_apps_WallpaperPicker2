@@ -28,10 +28,9 @@
         android:layout_height="match_parent"
         android:clipToPadding="false"
         android:paddingTop="@dimen/category_grid_padding_top"
-        android:paddingBottom="@dimen/category_grid_padding_bottom"
-        android:paddingHorizontal="@dimen/grid_edge_space"
+        android:paddingHorizontal="@dimen/category_grid_edge_space"
         android:scrollbarSize="@dimen/grid_padding"
         android:scrollbarStyle="outsideOverlay"
-        android:scrollbarThumbVertical="@color/scrollbar_thumb_color_dark"
+        android:scrollbarThumbVertical="?android:attr/textColorSecondary"
         android:scrollbars="vertical" />
 </LinearLayout>

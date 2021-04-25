@@ -30,6 +30,7 @@ import android.provider.Settings;
 import android.service.wallpaper.WallpaperService;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,8 +41,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.cardview.widget.CardView;
-import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.fragment.app.Fragment;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
@@ -63,14 +62,13 @@ import com.android.wallpaper.picker.MyPhotosStarter.PermissionChangedListener;
 import com.android.wallpaper.picker.individual.IndividualPickerFragment;
 import com.android.wallpaper.picker.individual.IndividualPickerFragment.ThumbnailUpdater;
 import com.android.wallpaper.picker.individual.IndividualPickerFragment.WallpaperDestinationCallback;
-import com.android.wallpaper.util.ActivityUtils;
 import com.android.wallpaper.util.DeepLinkUtils;
+import com.android.wallpaper.util.ResourceUtils;
 import com.android.wallpaper.util.SizeCalculator;
 import com.android.wallpaper.util.WallpaperConnection;
 import com.android.wallpaper.util.WallpaperConnection.WallpaperConnectionListener;
 import com.android.wallpaper.util.WallpaperSurfaceCallback;
-import com.android.wallpaper.widget.BottomActionBar;
-import com.android.wallpaper.widget.LockScreenPreviewer;
+import com.android.wallpaper.widget.LockScreenPreviewer2;
 import com.android.wallpaper.widget.PreviewPager;
 import com.android.wallpaper.widget.WallpaperColorsLoader;
 import com.android.wallpaper.widget.WallpaperPickerRecyclerViewAccessibilityDelegate;
@@ -104,8 +102,6 @@ public class CategoryFragment extends AppbarFragment
         void showViewOnlyPreview(WallpaperInfo wallpaperInfo, boolean isViewAsHome);
 
         void show(String collectionId);
-
-        boolean isNavigationTabsContained();
 
         void fetchCategories();
 
@@ -146,9 +142,8 @@ public class CategoryFragment extends AppbarFragment
     // The wallpaper information which is currently shown on the lock preview.
     private WallpaperInfo mLockPreviewWallpaperInfo;
 
-    private LockScreenPreviewer mLockScreenPreviewer;
+    private LockScreenPreviewer2 mLockScreenPreviewer;
     private View mRootContainer;
-    private BottomActionBar mBottomActionBar;
 
     private final Rect mPreviewLocalRect = new Rect();
     private final Rect mPreviewGlobalRect = new Rect();
@@ -184,7 +179,7 @@ public class CategoryFragment extends AppbarFragment
         ViewGroup lockPreviewContainer = lockscreenPreviewCard.findViewById(
                 R.id.lock_screen_preview_container);
         lockPreviewContainer.setVisibility(View.VISIBLE);
-        mLockScreenPreviewer = new LockScreenPreviewer(getLifecycle(), getContext(),
+        mLockScreenPreviewer = new LockScreenPreviewer2(getLifecycle(), getContext(),
                 lockPreviewContainer);
         mWallPaperPreviews.add(lockscreenPreviewCard);
 
@@ -265,7 +260,7 @@ public class CategoryFragment extends AppbarFragment
             return windowInsets;
         });
 
-        setUpToolbar(view, ActivityUtils.isLaunchedFromSettings(getActivity().getIntent()));
+        setUpToolbar(view);
 
         getChildFragmentManager()
                 .beginTransaction()
@@ -295,23 +290,6 @@ public class CategoryFragment extends AppbarFragment
         super.onViewCreated(view, savedInstanceState);
         updateWallpaperSurface();
         updateWorkspaceSurface();
-    }
-
-    @Override
-    protected void onBottomActionBarReady(BottomActionBar bottomActionBar) {
-        super.onBottomActionBarReady(bottomActionBar);
-        mBottomActionBar = bottomActionBar;
-        if (getFragmentHost().isNavigationTabsContained()) {
-            return;
-        }
-        int bottomActionBarHeight = getResources()
-                .getDimensionPixelSize(R.dimen.bottom_navbar_height);
-        ConstraintLayout.LayoutParams layoutParams =
-                (ConstraintLayout.LayoutParams) mRootContainer.getLayoutParams();
-        if (layoutParams != null) {
-            bottomActionBar.addVisibilityChangeListener(isVisible ->
-                    layoutParams.bottomMargin = isVisible ? bottomActionBarHeight : 0);
-        }
     }
 
     @Override
@@ -431,6 +409,16 @@ public class CategoryFragment extends AppbarFragment
     }
 
     @Override
+    public void setToolbarMenu(int menuResId) {
+        setUpToolbarMenu(menuResId);
+    }
+
+    @Override
+    public void removeToolbarMenu() {
+        mToolbar.getMenu().clear();
+    }
+
+    @Override
     public void moveToPreviousFragment() {
         getChildFragmentManager().popBackStack();
     }
@@ -443,11 +431,6 @@ public class CategoryFragment extends AppbarFragment
     @Override
     public void cleanUp() {
         getFragmentHost().cleanUp();
-    }
-
-    @Override
-    public void hideBottomActionBar() {
-        mBottomActionBar.hide();
     }
 
     @Override
@@ -494,11 +477,14 @@ public class CategoryFragment extends AppbarFragment
     }
 
     @Override
-    public boolean onBackPressed() {
-        Fragment childFragment = getChildFragmentManager().findFragmentById(
-                R.id.category_fragment_container);
-        return childFragment instanceof BottomActionBarFragment
-                && ((BottomActionBarFragment) childFragment).onBackPressed();
+    public boolean onMenuItemClick(MenuItem item) {
+        if (item.getItemId() == R.id.daily_rotation) {
+            if (mIndividualPickerFragment != null && mIndividualPickerFragment.isVisible()) {
+                mIndividualPickerFragment.showRotationDialog();
+            }
+            return true;
+        }
+        return super.onMenuItemClick(item);
     }
 
     /**
@@ -700,7 +686,8 @@ public class CategoryFragment extends AppbarFragment
         if (imageView != null) {
             wallpaperInfo.getThumbAsset(activity.getApplicationContext())
                     .loadPreviewImage(activity, imageView,
-                            getResources().getColor(R.color.secondary_color));
+                            ResourceUtils.getColorAttr(
+                                    getActivity(), android.R.attr.colorSecondary));
         }
 
         if (isHomeWallpaper) {
@@ -708,7 +695,8 @@ public class CategoryFragment extends AppbarFragment
                 if (mWallpaperSurfaceCallback.getHomeImageWallpaper() != null) {
                     wallpaperInfo.getThumbAsset(activity.getApplicationContext()).loadPreviewImage(
                             activity, mWallpaperSurfaceCallback.getHomeImageWallpaper(),
-                            getResources().getColor(R.color.secondary_color));
+                            ResourceUtils.getColorAttr(
+                                    getActivity(), android.R.attr.colorSecondary));
                 }
                 setUpLiveWallpaperPreview(wallpaperInfo);
             } else {
