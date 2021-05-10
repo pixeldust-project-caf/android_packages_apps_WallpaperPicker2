@@ -31,6 +31,8 @@ import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.os.Handler;
 import android.service.wallpaper.WallpaperService;
+import android.text.TextUtils;
+import android.util.ArraySet;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -99,6 +101,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 
 /**
  * Displays the Main UI for picking an individual wallpaper image.
@@ -125,6 +128,7 @@ public class IndividualPickerFragment extends AppbarFragment
     private static final String TAG_SET_WALLPAPER_ERROR_DIALOG_FRAGMENT =
             "individual_set_wallpaper_error_dialog";
     private static final String KEY_NIGHT_MODE = "IndividualPickerFragment.NIGHT_MODE";
+    private static final int MAX_CAPACITY_IN_FEWER_COLUMN_LAYOUT = 8;
 
     /**
      * An interface for updating the thumbnail with the specific wallpaper.
@@ -294,6 +298,7 @@ public class IndividualPickerFragment extends AppbarFragment
     private WallpaperManager mWallpaperManager;
     private int mWallpaperDestination;
     private WallpaperSelectedListener mWallpaperSelectedListener;
+    private Set<String> mAppliedWallpaperIds;
 
     public static IndividualPickerFragment newInstance(String collectionId) {
         Bundle args = new Bundle();
@@ -430,8 +435,6 @@ public class IndividualPickerFragment extends AppbarFragment
             mPackageStatusNotifier.addListener(mAppStatusListener,
                     WallpaperService.SERVICE_INTERFACE);
         }
-
-        maybeSetUpImageGrid();
     }
 
     void fetchWallpapers(boolean forceReload) {
@@ -446,6 +449,7 @@ public class IndividualPickerFragment extends AppbarFragment
                 for (WallpaperInfo wallpaper : wallpapers) {
                     mWallpapers.add(wallpaper);
                 }
+                maybeSetUpImageGrid();
 
                 // Wallpapers may load after the adapter is initialized, in which case we have
                 // to explicitly notify that the data set has changed.
@@ -509,6 +513,8 @@ public class IndividualPickerFragment extends AppbarFragment
             }
         }
 
+        mAppliedWallpaperIds = getAppliedWallpaperIds();
+
         mImageGrid = (RecyclerView) view.findViewById(R.id.wallpaper_grid);
         if (mFormFactor == FormFactorChecker.FORM_FACTOR_DESKTOP) {
             int gridPaddingPx = getResources().getDimensionPixelSize(R.dimen.grid_padding_desktop);
@@ -520,11 +526,19 @@ public class IndividualPickerFragment extends AppbarFragment
         maybeSetUpImageGrid();
         setUpBottomSheet();
         // For nav bar edge-to-edge effect.
-        view.findViewById(R.id.wallpaper_grid).setOnApplyWindowInsetsListener((v, windowInsets) -> {
+        view.setOnApplyWindowInsetsListener((v, windowInsets) -> {
+            // For status bar height.
             v.setPadding(
                     v.getPaddingLeft(),
-                    v.getPaddingTop(),
+                    windowInsets.getSystemWindowInsetTop(),
                     v.getPaddingRight(),
+                    v.getPaddingBottom());
+
+            View gridView = v.findViewById(R.id.wallpaper_grid);
+            gridView.setPadding(
+                    gridView.getPaddingLeft(),
+                    gridView.getPaddingTop(),
+                    gridView.getPaddingRight(),
                     windowInsets.getSystemWindowInsetBottom());
             return windowInsets.consumeSystemWindowInsets();
         });
@@ -557,7 +571,7 @@ public class IndividualPickerFragment extends AppbarFragment
         }
     }
 
-    private void maybeSetUpImageGrid() {
+    protected void maybeSetUpImageGrid() {
         // Skip if mImageGrid been initialized yet
         if (mImageGrid == null) {
             return;
@@ -575,7 +589,7 @@ public class IndividualPickerFragment extends AppbarFragment
         int edgePadding = getEdgePadding();
         mImageGrid.setPadding(edgePadding, mImageGrid.getPaddingTop(), edgePadding,
                 mImageGrid.getPaddingBottom());
-        mTileSizePx = mCategoryProvider.isFeaturedCategory(mCategory)
+        mTileSizePx = isFewerColumnLayout()
                 ? SizeCalculator.getFeaturedIndividualTileSize(getActivity())
                 : SizeCalculator.getIndividualTileSize(getActivity());
         setUpImageGrid();
@@ -584,8 +598,12 @@ public class IndividualPickerFragment extends AppbarFragment
                         mImageGrid, (BottomSheetHost) getParentFragment(), getNumColumns()));
     }
 
+    private boolean isFewerColumnLayout() {
+        return mWallpapers != null && mWallpapers.size() <= MAX_CAPACITY_IN_FEWER_COLUMN_LAYOUT;
+    }
+
     private int getGridItemPaddingHorizontal() {
-        return mCategoryProvider.isFeaturedCategory(mCategory)
+        return isFewerColumnLayout()
                 ? getResources().getDimensionPixelSize(
                 R.dimen.grid_item_featured_individual_padding_horizontal)
                 : getResources().getDimensionPixelSize(
@@ -593,14 +611,14 @@ public class IndividualPickerFragment extends AppbarFragment
     }
 
     private int getGridItemPaddingBottom() {
-        return mCategoryProvider.isFeaturedCategory(mCategory)
+        return isFewerColumnLayout()
                 ? getResources().getDimensionPixelSize(
                 R.dimen.grid_item_featured_individual_padding_bottom)
                 : getResources().getDimensionPixelSize(R.dimen.grid_item_individual_padding_bottom);
     }
 
     private int getEdgePadding() {
-        return mCategoryProvider.isFeaturedCategory(mCategory)
+        return isFewerColumnLayout()
                 ? getResources().getDimensionPixelSize(R.dimen.featured_wallpaper_grid_edge_space)
                 : getResources().getDimensionPixelSize(R.dimen.wallpaper_grid_edge_space);
     }
@@ -878,7 +896,7 @@ public class IndividualPickerFragment extends AppbarFragment
         if (activity == null) {
             return 1;
         }
-        return mCategoryProvider.isFeaturedCategory(mCategory)
+        return isFewerColumnLayout()
                 ? SizeCalculator.getNumFeaturedIndividualColumns(activity)
                 : SizeCalculator.getNumIndividualColumns(activity);
     }
@@ -1093,6 +1111,28 @@ public class IndividualPickerFragment extends AppbarFragment
         } else {
             return prefs.getLockWallpaperRemoteId();
         }
+    }
+
+    private Set<String> getAppliedWallpaperIds() {
+        WallpaperPreferences prefs =
+                InjectorProvider.getInjector().getPreferences(getContext());
+        android.app.WallpaperInfo wallpaperInfo = mWallpaperManager.getWallpaperInfo();
+        Set<String> appliedWallpaperIds = new ArraySet<>();
+
+        String homeWallpaperId = wallpaperInfo != null ? wallpaperInfo.getServiceName()
+                : prefs.getHomeWallpaperRemoteId();
+        if (!TextUtils.isEmpty(homeWallpaperId)) {
+            appliedWallpaperIds.add(homeWallpaperId);
+        }
+
+        boolean isLockWallpaperApplied =
+                mWallpaperManager.getWallpaperId(WallpaperManager.FLAG_LOCK) >= 0;
+        String lockWallpaperId = prefs.getLockWallpaperRemoteId();
+        if (isLockWallpaperApplied && !TextUtils.isEmpty(lockWallpaperId)) {
+            appliedWallpaperIds.add(lockWallpaperId);
+        }
+
+        return appliedWallpaperIds;
     }
 
     private void showCheckMarkAndBorderForAppliedWallpaper(boolean show) {
@@ -1377,8 +1417,7 @@ public class IndividualPickerFragment extends AppbarFragment
                     ? position - 1 : position;
             WallpaperInfo wallpaper = mWallpapers.get(wallpaperIndex);
             ((IndividualHolder) holder).bindWallpaper(wallpaper);
-            String appliedWallpaperId = getAppliedWallpaperId();
-            boolean isWallpaperApplied = wallpaper.getWallpaperId().equals(appliedWallpaperId);
+            boolean isWallpaperApplied = mAppliedWallpaperIds.contains(wallpaper.getWallpaperId());
             boolean isWallpaperSelected = wallpaper.equals(mSelectedWallpaperInfo);
             boolean hasUserSelectedWallpaper = mSelectedWallpaperInfo != null;
 
