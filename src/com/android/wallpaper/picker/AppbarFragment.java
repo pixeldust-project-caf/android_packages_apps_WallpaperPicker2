@@ -152,6 +152,7 @@ public abstract class AppbarFragment extends BottomActionBarFragment
     private void setUpUpArrow() {
         Drawable backIcon = getResources().getDrawable(R.drawable.material_ic_arrow_back_black_24,
                 null).mutate();
+        backIcon.setAutoMirrored(true);
         backIcon.setTint(
                 ResourceUtils.getColorAttr(getActivity(), android.R.attr.textColorPrimary));
         mToolbar.setNavigationIcon(backIcon);
@@ -204,11 +205,9 @@ public abstract class AppbarFragment extends BottomActionBarFragment
 
     @Override
     protected void onBottomActionBarReady(BottomActionBar bottomActionBar) {
-        if (mUpArrowEnabled && mHost.isUpArrowSupported()) {
-            bottomActionBar.setBackButtonVisibility(GONE);
-        } else {
-            bottomActionBar.setBackButtonVisibility(VISIBLE);
-        }
+        bottomActionBar.setBackButtonVisibility(
+                mUpArrowEnabled && mHost.isUpArrowSupported() ? GONE : VISIBLE);
+        super.onBottomActionBarReady(bottomActionBar);
     }
 
     @Override

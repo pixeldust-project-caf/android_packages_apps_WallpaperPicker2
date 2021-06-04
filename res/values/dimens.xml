@@ -44,6 +44,12 @@
     <dimen name="grid_item_featured_individual_padding_bottom">12dp</dimen>
     <dimen name="featured_wallpaper_grid_edge_space">18dp</dimen>
 
+    <!-- Dimensions for individual wallpaper wallpaper tiles' badge -->
+    <dimen name="grid_item_badge_size">24dp</dimen>
+    <dimen name="grid_item_badge_indicator_size">16dp</dimen>
+    <dimen name="grid_item_badge_margin_small">8dp</dimen>
+    <dimen name="grid_item_badge_margin">12dp</dimen>
+
     <!-- Dimensions for "permissions needed" tile. -->
     <dimen name="permissions_needed_metadata_content_margin_top">16dp</dimen>
     <dimen name="permissions_needed_metadata_warning_icon_margin_sides">16dp</dimen>
@@ -148,6 +154,10 @@
     <dimen name="bottom_action_button_padding_horizontal">26dp</dimen>
     <dimen name="bottom_action_button_radius">100dp</dimen>
 
+    <!-- Whenever updating this file, ensure that
+         bottom_actions_plus_pill_tabs == bottom_actions_height + pill_tabs_height -->
+    <dimen name="bottom_actions_plus_pill_tabs">144dp</dimen>
+
     <dimen name="bottom_sheet_margin">24dp</dimen>
     <dimen name="wallpaper_info_pane_padding">24dp</dimen>
     <dimen name="wallpaper_info_pane_subtitle1_top_margin">4dp</dimen>
@@ -160,9 +170,15 @@
     <dimen name="option_title_line_height">20dp</dimen>
 
     <!-- Dimensions for the pill tabs. -->
-    <dimen name="pill_tabs_height">60dp</dimen>
+    <dimen name="pill_tabs_height">56dp</dimen>
     <dimen name="pill_tabs_corner_radius">50dp</dimen>
     <dimen name="pill_tabs_horizontal_margin">24dp</dimen>
+
+    <!-- Whenever updating this file, ensure that
+         fullscreen_preview_button_margin == - pill_tabs_height -->
+    <dimen name="fullscreen_preview_button_margin">-60dp</dimen>
+    <dimen name="fullscreen_preview_button_margin_between">15dp</dimen>
+    <dimen name="fullscreen_preview_button_margin_bottom">28dp</dimen>
 
     <!-- The size of lock screen widget on the full screen. -->
     <dimen name="lock_screen_preview_lock_icon_size">42dp</dimen>

@@ -16,6 +16,7 @@
 package com.android.wallpaper.picker;
 
 import static com.android.wallpaper.widget.BottomActionBar.BottomAction.APPLY;
+import static com.android.wallpaper.widget.BottomActionBar.BottomAction.EDIT;
 
 import android.app.Activity;
 import android.content.Context;
@@ -30,8 +31,10 @@ import android.view.LayoutInflater;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.CallSuper;
 import androidx.annotation.IdRes;
 import androidx.annotation.IntDef;
@@ -49,6 +52,7 @@ import com.android.wallpaper.module.UserEventLogger;
 import com.android.wallpaper.module.WallpaperPersister.Destination;
 import com.android.wallpaper.module.WallpaperPreferences;
 import com.android.wallpaper.module.WallpaperSetter;
+import com.android.wallpaper.util.FullScreenAnimation;
 import com.android.wallpaper.widget.BottomActionBar;
 
 import java.util.Date;
@@ -140,6 +144,10 @@ public abstract class PreviewFragment extends AppbarFragment implements
     private SetWallpaperErrorDialogFragment mStagedSetWallpaperErrorDialogFragment;
     private LoadWallpaperErrorDialogFragment mStagedLoadWallpaperErrorDialogFragment;
 
+    // For full screen animations.
+    protected View mRootView;
+    protected FullScreenAnimation mFullScreenAnimation;
+
     protected static int getAttrColor(Context context, int attr) {
         TypedArray ta = context.obtainStyledAttributes(new int[]{attr});
         int colorAccent = ta.getColor(0, 0);
@@ -163,8 +171,6 @@ public abstract class PreviewFragment extends AppbarFragment implements
         mWallpaperSetter = new WallpaperSetter(injector.getWallpaperPersister(appContext),
                 injector.getPreferences(appContext), mUserEventLogger, mTestingModeEnabled);
 
-        setHasOptionsMenu(true);
-
         Activity activity = getActivity();
         List<String> attributions = getAttributions(activity);
         if (attributions.size() > 0 && attributions.get(0) != null) {
@@ -182,6 +188,24 @@ public abstract class PreviewFragment extends AppbarFragment implements
 
         mLoadingProgressBar = view.findViewById(getLoadingIndicatorResId());
         mLoadingProgressBar.show();
+
+        mRootView = view;
+        mFullScreenAnimation = new FullScreenAnimation(view);
+
+        getActivity().getWindow().getDecorView().setOnApplyWindowInsetsListener(
+                (v, windowInsets) -> {
+                    v.setPadding(
+                            v.getPaddingLeft(),
+                            0,
+                            v.getPaddingRight(),
+                            0);
+
+                    mFullScreenAnimation.setWindowInsets(windowInsets);
+                    mFullScreenAnimation.placeViews();
+                    return windowInsets.consumeSystemWindowInsets();
+                }
+        );
+
         return view;
     }
 
@@ -190,6 +214,52 @@ public abstract class PreviewFragment extends AppbarFragment implements
         super.onBottomActionBarReady(bottomActionBar);
         mBottomActionBar = bottomActionBar;
         // TODO: Extract the common code here.
+        setBottomActionBarAndFullScreenActions();
+    }
+
+    private void setBottomActionBarAndFullScreenActions() {
+        mBottomActionBar.setActionClickListener(EDIT, (view) -> {
+            mFullScreenAnimation.startAnimation(/* toFullScreen= */ true);
+            mBottomActionBar.deselectAction(EDIT);
+        });
+
+        // Update the button text for the current workspace visibility.
+        Button hideUiPreviewButton = mRootView.findViewById(R.id.hide_ui_preview_button);
+        hideUiPreviewButton.setText(mFullScreenAnimation.getWorkspaceVisibility()
+                ? R.string.hide_ui_preview_text
+                : R.string.show_ui_preview_text);
+        hideUiPreviewButton.setOnClickListener(
+                (button) -> {
+                    boolean visible = mFullScreenAnimation.getWorkspaceVisibility();
+                    // Update the button text for the next workspace visibility.
+                    ((Button) button).setText(visible
+                            ? R.string.show_ui_preview_text
+                            : R.string.hide_ui_preview_text);
+                    mFullScreenAnimation.setWorkspaceVisibility(!visible);
+                }
+        );
+        mRootView.findViewById(R.id.set_as_wallpaper_button).setOnClickListener(
+                this::onSetWallpaperClicked
+        );
+
+        mFullScreenAnimation.ensureBottomActionBarIsCorrectlyLocated();
+
+        OnBackPressedCallback callback = new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (mFullScreenAnimation.isFullScreen()) {
+                    mFullScreenAnimation.startAnimation(/* toFullScreen= */ false);
+                    return;
+                }
+                if (mBottomActionBar != null && !mBottomActionBar.isBottomSheetCollapsed()) {
+                    mBottomActionBar.collapseBottomSheetIfExpanded();
+                    return;
+                }
+                getActivity().finish();
+            }
+        };
+
+        getActivity().getOnBackPressedDispatcher().addCallback(this, callback);
     }
 
     protected List<String> getAttributions(Context context) {
