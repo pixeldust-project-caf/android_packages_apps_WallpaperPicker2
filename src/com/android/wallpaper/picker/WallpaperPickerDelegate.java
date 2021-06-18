@@ -117,7 +117,7 @@ public class WallpaperPickerDelegate implements MyPhotosStarter {
         if (mDownloadableIntentAction != null) {
             mDownloadableWallpaperStatusListener = (packageName, status) -> {
                 if (status != PackageStatusNotifier.PackageStatus.REMOVED) {
-                    populateCategories(true);
+                    populateCategories(/* forceRefresh= */ true);
                 }
             };
             mPackageStatusNotifier.addListener(
@@ -206,7 +206,7 @@ public class WallpaperPickerDelegate implements MyPhotosStarter {
             }
         } else {
             // CHANGED package, let's reload all categories as we could have more or fewer now
-            populateCategories(true);
+            populateCategories(/* forceRefresh= */ true);
         }
     }
 
@@ -263,7 +263,7 @@ public class WallpaperPickerDelegate implements MyPhotosStarter {
      * they're cached when loading later.
      */
     public void prefetchCategories() {
-        mCategoryProvider.resetIfNeeded();
+        boolean forceRefresh = mCategoryProvider.resetIfNeeded();
         mCategoryProvider.fetchCategories(new CategoryReceiver() {
             @Override
             public void onCategoryReceived(Category category) {
@@ -274,7 +274,7 @@ public class WallpaperPickerDelegate implements MyPhotosStarter {
             public void doneFetchingCategories() {
                 // Do nothing
             }
-        }, false);
+        }, forceRefresh);
     }
 
     /**
@@ -487,13 +487,14 @@ public class WallpaperPickerDelegate implements MyPhotosStarter {
                 imageWallpaper.showPreview(mActivity, getPreviewIntentFactory(),
                         PREVIEW_WALLPAPER_REQUEST_CODE);
                 return false;
+            case PREVIEW_LIVE_WALLPAPER_REQUEST_CODE:
+                mWallpaperPersister.onLiveWallpaperSet();
+                populateCategories(/* forceRefresh= */ true);
+                // Fall through.
             case VIEW_ONLY_PREVIEW_WALLPAPER_REQUEST_CODE:
                 // Fall through.
             case PREVIEW_WALLPAPER_REQUEST_CODE:
-                // Fall through.
-            case PREVIEW_LIVE_WALLPAPER_REQUEST_CODE:
                 // User previewed and selected a wallpaper, so finish this activity.
-                mWallpaperPersister.onLiveWallpaperSet();
                 return true;
             default:
                 return false;
