@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 The Android Open Source Project
+ * Copyright (C) 2021 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,19 +20,22 @@ import static android.view.View.MeasureSpec.makeMeasureSpec;
 
 import android.app.WallpaperColors;
 import android.content.Context;
-import android.content.res.ColorStateList;
 import android.content.res.Configuration;
+import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.graphics.Point;
+import android.text.SpannableString;
 import android.text.format.DateFormat;
+import android.text.style.ReplacementSpan;
 import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.MainThread;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleObserver;
@@ -46,24 +49,27 @@ import com.android.wallpaper.util.TimeUtils.TimeTicker;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-/** A class to load the custom lockscreen view to the preview screen. */
+/** A class to load the new custom lockscreen view to the preview screen. */
 public class LockScreenPreviewer implements LifecycleObserver {
 
     private static final String DEFAULT_DATE_PATTERN = "EEE, MMM d";
+    private static final ExecutorService sExecutorService = Executors.newSingleThreadExecutor();
 
-    private Context mContext;
-    private String mDatePattern;
+    private final Lifecycle mLifecycle;
+    private final Context mContext;
+    private final String mDatePattern;
+    private final TextView mLockTime;
+    private final TextView mLockDate;
     private TimeTicker mTicker;
-    private ImageView mLockIcon;
-    private TextView mLockTime;
-    private TextView mLockDate;
 
     public LockScreenPreviewer(Lifecycle lifecycle, Context context, ViewGroup previewContainer) {
+        mLifecycle = lifecycle;
         mContext = context;
         View contentView = LayoutInflater.from(mContext).inflate(
                 R.layout.lock_screen_preview, /* root= */ null);
-        mLockIcon = contentView.findViewById(R.id.lock_icon);
         mLockTime = contentView.findViewById(R.id.lock_time);
         mLockDate = contentView.findViewById(R.id.lock_date);
         mDatePattern = DateFormat.getBestDateTimePattern(Locale.getDefault(), DEFAULT_DATE_PATTERN);
@@ -72,13 +78,13 @@ public class LockScreenPreviewer implements LifecycleObserver {
         Point screenSize = ScreenSizeCalculator.getInstance().getScreenSize(defaultDisplay);
 
         Configuration config = mContext.getResources().getConfiguration();
-        final boolean directionLTR = config.getLayoutDirection() == View.LAYOUT_DIRECTION_LTR;
+        boolean directionLTR = config.getLayoutDirection() == View.LAYOUT_DIRECTION_LTR;
 
         View rootView = previewContainer.getRootView();
         rootView.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
             @Override
             public void onLayoutChange(View view, int left, int top, int right, int bottom,
-                                       int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                    int oldLeft, int oldTop, int oldRight, int oldBottom) {
                 int cardHeight = previewContainer.getMeasuredHeight();
                 int cardWidth = previewContainer.getMeasuredWidth();
 
@@ -105,22 +111,27 @@ public class LockScreenPreviewer implements LifecycleObserver {
                 rootView.removeOnLayoutChangeListener(this);
             }
         });
-        lifecycle.addObserver(this);
+        mLifecycle.addObserver(this);
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
     @MainThread
     public void onResume() {
-        mTicker = TimeTicker.registerNewReceiver(mContext, this::updateDateTime);
+        if (mTicker == null) {
+            sExecutorService.submit(() -> {
+                if (mContext != null && mLifecycle.getCurrentState().isAtLeast(
+                        Lifecycle.State.RESUMED)) {
+                    mTicker = TimeTicker.registerNewReceiver(mContext, this::updateDateTime);
+                }
+            });
+        }
         updateDateTime();
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
     @MainThread
     public void onPause() {
-        if (mContext != null) {
-            mContext.unregisterReceiver(mTicker);
-        }
+        unregisterReceiver();
     }
 
     /**
@@ -133,21 +144,12 @@ public class LockScreenPreviewer implements LifecycleObserver {
         boolean useLightTextColor = colors == null
                 || (colors.getColorHints() & WallpaperColors.HINT_SUPPORTS_DARK_TEXT) == 0;
         int color = mContext.getColor(useLightTextColor
-                ? android.R.color.white : android.R.color.black);
+                ? R.color.text_color_light : R.color.text_color_dark);
         int textShadowColor = mContext.getColor(useLightTextColor
-                ? android.R.color.tertiary_text_dark
-                : android.R.color.transparent);
-        mLockIcon.setImageTintList(ColorStateList.valueOf(color));
+                ? R.color.smartspace_preview_shadow_color_dark
+                : R.color.smartspace_preview_shadow_color_transparent);
         mLockDate.setTextColor(color);
-        mLockTime.setTextColor(color);
-
         mLockDate.setShadowLayer(
-                mContext.getResources().getDimension(
-                        R.dimen.smartspace_preview_key_ambient_shadow_blur),
-                /* dx = */ 0,
-                /* dy = */ 0,
-                textShadowColor);
-        mLockTime.setShadowLayer(
                 mContext.getResources().getDimension(
                         R.dimen.smartspace_preview_key_ambient_shadow_blur),
                 /* dx = */ 0,
@@ -155,9 +157,81 @@ public class LockScreenPreviewer implements LifecycleObserver {
                 textShadowColor);
     }
 
+    /** Sets visibility for date view. */
+    public void setDateViewVisibility(boolean visible) {
+        mLockDate.setVisibility(visible ? View.VISIBLE : View.INVISIBLE);
+    }
+
+    public void release() {
+        mLifecycle.removeObserver(this);
+        unregisterReceiver();
+    }
+
+    private void unregisterReceiver() {
+        if (mTicker == null) {
+            return;
+        }
+
+        sExecutorService.submit(() -> {
+            if (mContext != null && mTicker != null) {
+                mContext.unregisterReceiver(mTicker);
+                mTicker = null;
+            }
+        });
+    }
+
     private void updateDateTime() {
         Calendar calendar = Calendar.getInstance(TimeZone.getDefault());
-        mLockTime.setText(TimeUtils.getFormattedTime(mContext, calendar));
         mLockDate.setText(DateFormat.format(mDatePattern, calendar));
+        SpannableString timeWithMonospaceText = new SpannableString(
+                TimeUtils.getDoubleLineFormattedTime(mContext, calendar));
+        timeWithMonospaceText.setSpan(new MonospaceSpan(), /* start= */ 0,
+                timeWithMonospaceText.length(), /* flag= */ 0);
+        mLockTime.setText(timeWithMonospaceText);
+    }
+
+    /** Make text monospace without overriding the text fontFamily. */
+    private static class MonospaceSpan extends ReplacementSpan {
+
+        @Override
+        public int getSize(@NonNull Paint paint, @NonNull CharSequence text, int start, int end,
+                @Nullable Paint.FontMetricsInt fontMetricsInt) {
+            if (fontMetricsInt != null) {
+                paint.getFontMetricsInt(fontMetricsInt);
+            }
+            int count = end - start;
+            if (text.charAt(start) == '\n') {
+                count--;
+            }
+            if (text.charAt(end - 1) == '\n') {
+                count--;
+            }
+            return getMaxCharWidth(paint, text, /* start= */ 0, text.length())
+                    * Math.max(count, 0);
+        }
+
+        @Override
+        public void draw(@NonNull Canvas canvas, @NonNull CharSequence text, int start, int end,
+                float x, int top, int y, int bottom, @NonNull Paint paint) {
+            float[] widths = new float[end - start];
+            paint.getTextWidths(text, start, end, widths);
+            int maxCharWidth = getMaxCharWidth(paint, text, /* start= */ 0, text.length());
+            for (int i = 0; i < end - start; ++i) {
+                canvas.drawText(text, start + i, start + i + 1,
+                        x + maxCharWidth * i + (maxCharWidth - widths[i]) / 2, y, paint);
+            }
+        }
+
+        private int getMaxCharWidth(Paint paint, CharSequence text, int start, int end) {
+            float[] widths = new float[end - start];
+            paint.getTextWidths(text, start, end, widths);
+            float max = 0;
+            for (float w : widths) {
+                if (max < w) {
+                    max = w;
+                }
+            }
+            return Math.round(max);
+        }
     }
 }

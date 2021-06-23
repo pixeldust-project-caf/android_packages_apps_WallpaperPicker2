@@ -61,10 +61,11 @@ import com.android.wallpaper.picker.WorkspaceSurfaceHolderCallback;
 import com.android.wallpaper.util.ResourceUtils;
 import com.android.wallpaper.util.WallpaperConnection;
 import com.android.wallpaper.util.WallpaperSurfaceCallback;
-import com.android.wallpaper.widget.LockScreenPreviewer2;
+import com.android.wallpaper.widget.LockScreenPreviewer;
 
 /** The class to control the wallpaper section view. */
-public class WallpaperSectionController implements HubSectionController<WallpaperSectionView>,
+public class WallpaperSectionController implements
+        CustomizationSectionController<WallpaperSectionView>,
         LifecycleObserver {
 
     private static final String PERMISSION_READ_WALLPAPER_INTERNAL =
@@ -89,7 +90,7 @@ public class WallpaperSectionController implements HubSectionController<Wallpape
     // The wallpaper information which is currently shown on the lock preview.
     private WallpaperInfo mLockPreviewWallpaperInfo;
 
-    private LockScreenPreviewer2 mLockScreenPreviewer;
+    private LockScreenPreviewer mLockScreenPreviewer;
 
     private final Activity mActivity;
     private final Context mAppContext;
@@ -97,14 +98,14 @@ public class WallpaperSectionController implements HubSectionController<Wallpape
     private final PermissionRequester mPermissionRequester;
     private final WallpaperColorsViewModel mWallpaperColorsViewModel;
     private final WorkspaceViewModel mWorkspaceViewModel;
-    private final HubSectionNavigationController mHubSectionNavigationController;
+    private final CustomizationSectionNavigationController mSectionNavigationController;
     private final WallpaperPreviewNavigator mWallpaperPreviewNavigator;
     private final Bundle mSavedInstanceState;
 
     public WallpaperSectionController(Activity activity, LifecycleOwner lifecycleOwner,
             PermissionRequester permissionRequester, WallpaperColorsViewModel colorsViewModel,
             WorkspaceViewModel workspaceViewModel,
-            HubSectionNavigationController hubSectionNavigationController,
+            CustomizationSectionNavigationController sectionNavigationController,
             WallpaperPreviewNavigator wallpaperPreviewNavigator,
             Bundle savedInstanceState) {
         mActivity = activity;
@@ -113,7 +114,7 @@ public class WallpaperSectionController implements HubSectionController<Wallpape
         mAppContext = mActivity.getApplicationContext();
         mWallpaperColorsViewModel = colorsViewModel;
         mWorkspaceViewModel = workspaceViewModel;
-        mHubSectionNavigationController = hubSectionNavigationController;
+        mSectionNavigationController = sectionNavigationController;
         mWallpaperPreviewNavigator = wallpaperPreviewNavigator;
         mSavedInstanceState = savedInstanceState;
     }
@@ -154,8 +155,6 @@ public class WallpaperSectionController implements HubSectionController<Wallpape
         WallpaperSectionView wallpaperSectionView = (WallpaperSectionView) LayoutInflater.from(
                 context).inflate(R.layout.wallpaper_section_view, /* root= */ null);
         mHomePreviewCard = wallpaperSectionView.findViewById(R.id.home_preview);
-        // TODO(santie) completely remove wallpaper_preview_image once we get rid of the old ui
-        mHomePreviewCard.findViewById(R.id.wallpaper_preview_image).setVisibility(View.GONE);
         mHomePreviewCard.setContentDescription(mAppContext.getString(
                 R.string.wallpaper_preview_card_content_description));
         mWorkspaceSurface = mHomePreviewCard.findViewById(R.id.workspace_surface);
@@ -175,7 +174,6 @@ public class WallpaperSectionController implements HubSectionController<Wallpape
                 R.string.lockscreen_wallpaper_preview_card_content_description));
         mLockscreenPreviewProgress = mLockscreenPreviewCard.findViewById(
                 R.id.wallpaper_preview_spinner);
-        mLockscreenPreviewCard.findViewById(R.id.wallpaper_preview_image).setVisibility(View.GONE);
         mLockscreenPreviewCard.findViewById(R.id.workspace_surface).setVisibility(View.GONE);
         mLockWallpaperSurface = mLockscreenPreviewCard.findViewById(R.id.wallpaper_surface);
         mLockWallpaperSurfaceCallback = new WallpaperSurfaceCallback(mActivity,
@@ -187,7 +185,7 @@ public class WallpaperSectionController implements HubSectionController<Wallpape
         mLockPreviewContainer = mLockscreenPreviewCard.findViewById(
                 R.id.lock_screen_preview_container);
         mLockPreviewContainer.setVisibility(View.INVISIBLE);
-        mLockScreenPreviewer = new LockScreenPreviewer2(mLifecycleOwner.getLifecycle(), context,
+        mLockScreenPreviewer = new LockScreenPreviewer(mLifecycleOwner.getLifecycle(), context,
                 mLockPreviewContainer);
 
         setupCurrentWallpaperPreview(wallpaperSectionView);
@@ -199,7 +197,7 @@ public class WallpaperSectionController implements HubSectionController<Wallpape
         updateWorkspaceSurface();
 
         wallpaperSectionView.findViewById(R.id.wallpaper_picker_entry).setOnClickListener(
-                v -> mHubSectionNavigationController.navigateTo(new CategorySelectorFragment()));
+                v -> mSectionNavigationController.navigateTo(new CategorySelectorFragment()));
 
         mWorkspaceViewModel.getUpdateWorkspace().observe(mLifecycleOwner, update ->
                 updateWorkspacePreview(mWorkspaceSurface, mWorkspaceSurfaceCallback,
@@ -338,6 +336,10 @@ public class WallpaperSectionController implements HubSectionController<Wallpape
                     mLockPreviewWallpaperInfo =
                             lockWallpaper == null ? homeWallpaper : lockWallpaper;
 
+                    mHomePreviewWallpaperInfo.computePlaceholderColor(mAppContext);
+                    if (lockWallpaper != null) {
+                        lockWallpaper.computePlaceholderColor(mAppContext);
+                    }
                     updatePreview(mHomePreviewWallpaperInfo, true);
                     updatePreview(mLockPreviewWallpaperInfo, false);
 
@@ -372,7 +374,7 @@ public class WallpaperSectionController implements HubSectionController<Wallpape
                 ? mHomeWallpaperSurfaceCallback : mLockWallpaperSurfaceCallback;
         // Load thumb regardless of live wallpaper to make sure we have a placeholder while
         // the live wallpaper initializes in that case.
-        Asset thumbAsset = maybeLoadThumbnail(wallpaperInfo, surfaceCallback);
+        maybeLoadThumbnail(wallpaperInfo, surfaceCallback);
 
         if (isHomeWallpaper) {
             if (mWallpaperConnection != null) {
@@ -528,6 +530,25 @@ public class WallpaperSectionController implements HubSectionController<Wallpape
         }
         if (mLockPreviewContainer != null) {
             mLockPreviewContainer.setVisibility(visibility);
+        }
+    }
+
+    @Override
+    public void onTransitionOut() {
+        if (mHomeWallpaperSurface != null) {
+            mHomeWallpaperSurface.setUseAlpha();
+            mHomeWallpaperSurface.setAlpha(0f);
+        }
+        if (mLockWallpaperSurface != null) {
+            mLockWallpaperSurface.setUseAlpha();
+            mLockWallpaperSurface.setAlpha(0f);
+        }
+        if (mWorkspaceSurface != null) {
+            mWorkspaceSurface.setUseAlpha();
+            mWorkspaceSurface.setAlpha(0f);
+        }
+        if (mLockPreviewContainer != null) {
+            mLockPreviewContainer.setAlpha(0f);
         }
     }
 }
