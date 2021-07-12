@@ -15,6 +15,7 @@
  */
 package com.android.wallpaper.picker;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -87,8 +88,21 @@ public class CustomizationPickerFragment extends AppbarFragment implements
 
         initSections(savedInstanceState);
         mSectionControllers.forEach(controller ->
-                sectionContainer.addView(controller.createView(getContext())));
-        restoreViewState(savedInstanceState);
+                mNestedScrollView.post(() -> {
+                            final Context context = getContext();
+                            if (context == null) {
+                                Log.w(TAG, "Adding section views with null context");
+                                return;
+                            }
+                            sectionContainer.addView(controller.createView(context));
+                        }
+                )
+        );
+        final Bundle savedInstanceStateRef = savedInstanceState;
+        // Post it to the end of adding views to ensure restoring view state the last task.
+        mNestedScrollView.post(() ->
+                restoreViewState(savedInstanceStateRef)
+        );
         return view;
     }
 
@@ -179,7 +193,7 @@ public class CustomizationPickerFragment extends AppbarFragment implements
         mSectionControllers.addAll(getAvailableSections(allSectionControllers));
     }
 
-    private List<CustomizationSectionController<?>> getAvailableSections (
+    protected List<CustomizationSectionController<?>> getAvailableSections(
             List<CustomizationSectionController<?>> controllers) {
         return controllers.stream()
                 .filter(controller -> {

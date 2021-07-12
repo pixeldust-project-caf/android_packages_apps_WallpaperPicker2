@@ -89,7 +89,7 @@
     <dimen name="set_wallpaper_dialog_item_min_width">300dp</dimen>
     <dimen name="set_wallpaper_dialog_item_outer_corner_radius">12dp</dimen>
     <dimen name="set_wallpaper_dialog_item_inner_corner_radius">4dp</dimen>
-    <dimen name="set_wallpaper_dialog_icon_size">24dp</dimen>
+    <dimen name="set_wallpaper_dialog_icon_size">32dp</dimen>
 
     <!-- Dimensions for the "wallpaper disabled by administrator" UI. -->
     <dimen name="wallpaper_disabled_asset_margin_bottom">26dp</dimen>
@@ -126,7 +126,7 @@
 
     <!-- Dimensions for the "disabled by admin" UI in desktop mode. -->
     <dimen name="disabled_by_admin_desktop_message_text_size">13sp</dimen>
-    <dimen name="preview_bottom_sheet_corner_radius">?android:attr/dialogCornerRadius</dimen>
+    <dimen name="preview_bottom_sheet_corner_radius">12dp</dimen>
 
     <!-- Dimensions for PreviewPager and PageIndicator. -->
     <dimen name="preview_indicator_width">16dp</dimen>

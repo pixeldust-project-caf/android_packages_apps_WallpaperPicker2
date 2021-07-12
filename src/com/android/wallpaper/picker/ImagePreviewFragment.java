@@ -38,6 +38,7 @@ import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.Rect;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Surface;
@@ -72,7 +73,6 @@ import com.android.wallpaper.util.WallpaperCropUtils;
 import com.android.wallpaper.widget.BottomActionBar;
 import com.android.wallpaper.widget.BottomActionBar.AccessibilityCallback;
 import com.android.wallpaper.widget.LockScreenPreviewer;
-import com.android.wallpaper.widget.WallpaperInfoView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.MemoryCategory;
@@ -82,6 +82,8 @@ import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 import java.io.ByteArrayOutputStream;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -93,9 +95,13 @@ public class ImagePreviewFragment extends PreviewFragment {
 
     private static final String TAG = "ImagePreviewFragment";
     private static final float DEFAULT_WALLPAPER_MAX_ZOOM = 8f;
+    private static final Executor sExecutor = Executors.newCachedThreadPool();
 
     private final WallpaperSurfaceCallback mWallpaperSurfaceCallback =
             new WallpaperSurfaceCallback();
+
+    private final AtomicInteger mImageScaleChangeCounter = new AtomicInteger(0);
+    private final AtomicInteger mRecalculateColorCounter = new AtomicInteger(0);
 
     private SubsamplingScaleImageView mFullResImageView;
     private Asset mWallpaperAsset;
@@ -105,8 +111,6 @@ public class ImagePreviewFragment extends PreviewFragment {
     private TouchForwardingLayout mTouchForwardingLayout;
     private ConstraintLayout mContainer;
     private SurfaceView mWallpaperSurface;
-    private WallpaperInfoView mWallpaperInfoView;
-    private AtomicInteger mImageScaleChangeCounter = new AtomicInteger(0);
 
     protected SurfaceView mWorkspaceSurface;
     protected WorkspaceSurfaceHolderCallback mWorkspaceSurfaceCallback;
@@ -225,10 +229,8 @@ public class ImagePreviewFragment extends PreviewFragment {
     @Override
     protected void onBottomActionBarReady(BottomActionBar bottomActionBar) {
         super.onBottomActionBarReady(bottomActionBar);
-        mWallpaperInfoView = (WallpaperInfoView)
-                LayoutInflater.from(getContext()).inflate(
-                        R.layout.wallpaper_info_view, /* root= */null);
-        mBottomActionBar.attachViewToBottomSheetAndBindAction(mWallpaperInfoView, INFORMATION);
+        mBottomActionBar.bindBottomSheetContentWithAction(
+                new WallpaperInfoContent(getContext()), INFORMATION);
         mBottomActionBar.showActionsOnly(INFORMATION, EDIT, APPLY);
 
         mBottomActionBar.setActionClickListener(APPLY, this::onSetWallpaperClicked);
@@ -255,8 +257,6 @@ public class ImagePreviewFragment extends PreviewFragment {
         });
 
         mBottomActionBar.show();
-        // Loads wallpaper info and populate into view.
-        setUpExploreIntentAndLabel(this::populateWallpaperInfo);
         // To avoid applying the wallpaper when the wallpaper's not parsed.
         mBottomActionBar.disableActions();
         // If the wallpaper is parsed, enable the bottom action bar.
@@ -350,25 +350,31 @@ public class ImagePreviewFragment extends PreviewFragment {
                 new BitmapCropper.Callback() {
                     @Override
                     public void onBitmapCropped(Bitmap croppedBitmap) {
-                        boolean shouldRecycle = false;
-                        ByteArrayOutputStream tmpOut = new ByteArrayOutputStream();
-                        if (croppedBitmap.compress(Bitmap.CompressFormat.PNG, 100, tmpOut)) {
-                            byte[] outByteArray = tmpOut.toByteArray();
-                            BitmapFactory.Options options = new BitmapFactory.Options();
-                            options.inPreferredColorSpace = ColorSpace.get(ColorSpace.Named.SRGB);
-                            Bitmap decodedPng = BitmapFactory.decodeByteArray(outByteArray, 0,
-                                    outByteArray.length);
-                            croppedBitmap = decodedPng;
-                        }
-                        if (croppedBitmap.getConfig() == Bitmap.Config.HARDWARE) {
-                            croppedBitmap = croppedBitmap.copy(Bitmap.Config.ARGB_8888, false);
-                            shouldRecycle = true;
-                        }
-                        WallpaperColors colors = WallpaperColors.fromBitmap(croppedBitmap);
-                        if (shouldRecycle) {
-                            croppedBitmap.recycle();
-                        }
-                        onWallpaperColorsChanged(colors);
+                        mRecalculateColorCounter.incrementAndGet();
+                        sExecutor.execute(() -> {
+                            boolean shouldRecycle = false;
+                            ByteArrayOutputStream tmpOut = new ByteArrayOutputStream();
+                            Bitmap cropped = croppedBitmap;
+                            if (cropped.compress(Bitmap.CompressFormat.PNG, 100, tmpOut)) {
+                                byte[] outByteArray = tmpOut.toByteArray();
+                                BitmapFactory.Options options = new BitmapFactory.Options();
+                                options.inPreferredColorSpace =
+                                        ColorSpace.get(ColorSpace.Named.SRGB);
+                                cropped = BitmapFactory.decodeByteArray(outByteArray, 0,
+                                        outByteArray.length);
+                            }
+                            if (cropped.getConfig() == Bitmap.Config.HARDWARE) {
+                                cropped = cropped.copy(Bitmap.Config.ARGB_8888, false);
+                                shouldRecycle = true;
+                            }
+                            WallpaperColors colors = WallpaperColors.fromBitmap(cropped);
+                            if (shouldRecycle) {
+                                cropped.recycle();
+                            }
+                            if (mRecalculateColorCounter.decrementAndGet() == 0) {
+                                Handler.getMain().post(() -> onWallpaperColorsChanged(colors));
+                            }
+                        });
                     }
 
                     @Override
@@ -376,17 +382,6 @@ public class ImagePreviewFragment extends PreviewFragment {
                         Log.w(TAG, "Recalculate colors, crop and scale bitmap failed.", e);
                     }
                 });
-    }
-
-    private void populateWallpaperInfo() {
-        if (mWallpaperInfoView != null && mWallpaper != null) {
-            mWallpaperInfoView.populateWallpaperInfo(
-                    mWallpaper,
-                    mActionLabel,
-                    WallpaperInfoHelper.shouldShowExploreButton(
-                            getContext(), mExploreIntent),
-                    this::onExploreClicked);
-        }
     }
 
     /**
