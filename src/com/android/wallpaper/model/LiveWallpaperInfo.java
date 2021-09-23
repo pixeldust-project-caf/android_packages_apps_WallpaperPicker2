@@ -24,6 +24,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.res.Resources;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Parcel;
 import android.service.wallpaper.WallpaperService;
 import android.text.TextUtils;
@@ -35,7 +36,6 @@ import androidx.annotation.Nullable;
 import com.android.wallpaper.R;
 import com.android.wallpaper.asset.Asset;
 import com.android.wallpaper.asset.LiveWallpaperThumbAsset;
-import com.android.wallpaper.compat.BuildCompat;
 import com.android.wallpaper.module.InjectorProvider;
 import com.android.wallpaper.module.LiveWallpaperInfoFactory;
 import com.android.wallpaper.util.ActivityUtils;
@@ -77,7 +77,7 @@ public class LiveWallpaperInfo extends WallpaperInfo {
     public static final String ATTR_SERVICE = "service";
 
     /**
-     * Create a new {@link LiveWallpaperInfo} from an XML {@link AttributeSet}
+     * Creates a new {@link LiveWallpaperInfo} from an XML {@link AttributeSet}
      * @param context used to construct the {@link android.app.WallpaperInfo} associated with the
      *                new {@link LiveWallpaperInfo}
      * @param categoryId Id of the category the new wallpaper will belong to
@@ -94,6 +94,17 @@ public class LiveWallpaperInfo extends WallpaperInfo {
         }
         String packageName = attrs.getAttributeValue(null, ATTR_PACKAGE);
         String serviceName = attrs.getAttributeValue(null, ATTR_SERVICE);
+        return fromPackageAndServiceName(context, categoryId, wallpaperId, packageName,
+                serviceName);
+    }
+
+    /**
+     * Creates a new {@link LiveWallpaperInfo} from its individual components
+     * @return a newly created {@link LiveWallpaperInfo} or {@code null} if one couldn't be created.
+     */
+    @Nullable
+    public static LiveWallpaperInfo fromPackageAndServiceName(Context context, String categoryId,
+            String wallpaperId, String packageName, String serviceName) {
         if (TextUtils.isEmpty(serviceName)) {
             Log.w(TAG, "Live wallpaper declaration without service: " + wallpaperId);
             return null;
@@ -355,7 +366,7 @@ public class LiveWallpaperInfo extends WallpaperInfo {
 
     @Override
     public String getActionUrl(Context context) {
-        if (BuildCompat.isAtLeastNMR1()) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
             try {
                 Uri wallpaperContextUri = mInfo.loadContextUri(context.getPackageManager());
                 if (wallpaperContextUri != null) {
