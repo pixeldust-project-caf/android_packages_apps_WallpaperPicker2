@@ -39,6 +39,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
 import android.graphics.Point;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.RemoteException;
 import android.service.wallpaper.IWallpaperConnection;
@@ -64,7 +65,6 @@ import androidx.slice.widget.SliceLiveData;
 import androidx.slice.widget.SliceView;
 
 import com.android.wallpaper.R;
-import com.android.wallpaper.compat.BuildCompat;
 import com.android.wallpaper.module.WallpaperPersister.SetWallpaperCallback;
 import com.android.wallpaper.util.FullScreenAnimation;
 import com.android.wallpaper.util.ResourceUtils;
@@ -118,6 +118,7 @@ public class LivePreviewFragment extends PreviewFragment implements
     private TouchForwardingLayout mTouchForwardingLayout;
     private SurfaceView mWallpaperSurface;
     private Future<Integer> mPlaceholderColorFuture;
+    private WallpaperColors mWallpaperColors;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -326,7 +327,7 @@ public class LivePreviewFragment extends PreviewFragment implements
             WallpaperColorsLoader.getWallpaperColors(
                     activity,
                     homeWallpaper.getThumbAsset(activity),
-                    mLockScreenPreviewer::setColor);
+                    colors -> onWallpaperColorsChanged(colors, 0));
         }
         if (mWallpaperConnection != null && !mWallpaperConnection.connect()) {
             mWallpaperConnection = null;
@@ -414,6 +415,7 @@ public class LivePreviewFragment extends PreviewFragment implements
 
     @Override
     public void onWallpaperColorsChanged(WallpaperColors colors, int displayId) {
+        mWallpaperColors = colors;
         mLockScreenPreviewer.setColor(colors);
 
         mFullScreenAnimation.setFullScreenTextColor(
@@ -430,7 +432,7 @@ public class LivePreviewFragment extends PreviewFragment implements
 
     @SuppressLint("NewApi") //Already checking with isAtLeastQ
     protected Uri getSettingsSliceUri(android.app.WallpaperInfo info) {
-        if (BuildCompat.isAtLeastQ()) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             return info.getSettingsSliceUri();
         }
         return null;
@@ -444,7 +446,8 @@ public class LivePreviewFragment extends PreviewFragment implements
     @Override
     protected void setCurrentWallpaper(int destination) {
         mWallpaperSetter.setCurrentWallpaper(getActivity(), mWallpaper, null,
-                destination, 0, null, new SetWallpaperCallback() {
+                destination, 0, null, mWallpaperColors,
+                new SetWallpaperCallback() {
                     @Override
                     public void onSuccess(com.android.wallpaper.model.WallpaperInfo wallpaperInfo) {
                         finishActivity(/* success= */ true);
