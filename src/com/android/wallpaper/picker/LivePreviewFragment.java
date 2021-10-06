@@ -65,7 +65,7 @@ import androidx.slice.widget.SliceLiveData;
 import androidx.slice.widget.SliceView;
 
 import com.android.wallpaper.R;
-import com.android.wallpaper.module.WallpaperPersister.SetWallpaperCallback;
+import com.android.wallpaper.model.SetWallpaperViewModel;
 import com.android.wallpaper.util.FullScreenAnimation;
 import com.android.wallpaper.util.ResourceUtils;
 import com.android.wallpaper.util.ScreenSizeCalculator;
@@ -167,6 +167,11 @@ public class LivePreviewFragment extends PreviewFragment implements
                 activity.getWindowManager().getDefaultDisplay());
         mPreviewContainer = view.findViewById(R.id.live_wallpaper_preview);
         mTouchForwardingLayout = view.findViewById(R.id.touch_forwarding_layout);
+
+        // Update preview header color which covers toolbar and status bar area.
+        View previewHeader = view.findViewById(R.id.preview_header);
+        previewHeader.setBackgroundColor(activity.getColor(R.color.settingslib_colorSurfaceHeader));
+
         // Set aspect ratio on the preview card.
         ConstraintSet set = new ConstraintSet();
         set.clone((ConstraintLayout) mPreviewContainer);
@@ -447,17 +452,7 @@ public class LivePreviewFragment extends PreviewFragment implements
     protected void setCurrentWallpaper(int destination) {
         mWallpaperSetter.setCurrentWallpaper(getActivity(), mWallpaper, null,
                 destination, 0, null, mWallpaperColors,
-                new SetWallpaperCallback() {
-                    @Override
-                    public void onSuccess(com.android.wallpaper.model.WallpaperInfo wallpaperInfo) {
-                        finishActivity(/* success= */ true);
-                    }
-
-                    @Override
-                    public void onError(@Nullable Throwable throwable) {
-                        showSetWallpaperErrorDialog(destination);
-                    }
-                });
+                SetWallpaperViewModel.getCallback(mViewModelProvider));
     }
 
     @Nullable

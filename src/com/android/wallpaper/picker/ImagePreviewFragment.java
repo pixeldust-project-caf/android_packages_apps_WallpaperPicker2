@@ -60,11 +60,10 @@ import androidx.fragment.app.FragmentActivity;
 import com.android.wallpaper.R;
 import com.android.wallpaper.asset.Asset;
 import com.android.wallpaper.asset.CurrentWallpaperAssetVN;
-import com.android.wallpaper.model.WallpaperInfo;
+import com.android.wallpaper.model.SetWallpaperViewModel;
 import com.android.wallpaper.module.BitmapCropper;
 import com.android.wallpaper.module.InjectorProvider;
 import com.android.wallpaper.module.WallpaperPersister.Destination;
-import com.android.wallpaper.module.WallpaperPersister.SetWallpaperCallback;
 import com.android.wallpaper.util.FullScreenAnimation;
 import com.android.wallpaper.util.ResourceUtils;
 import com.android.wallpaper.util.ScreenSizeCalculator;
@@ -111,6 +110,7 @@ public class ImagePreviewFragment extends PreviewFragment {
     private TouchForwardingLayout mTouchForwardingLayout;
     private ConstraintLayout mContainer;
     private SurfaceView mWallpaperSurface;
+    private boolean mIsSurfaceCreated = false;
     private WallpaperColors mWallpaperColors;
 
     protected SurfaceView mWorkspaceSurface;
@@ -143,6 +143,10 @@ public class ImagePreviewFragment extends PreviewFragment {
         mContainer = view.findViewById(R.id.container);
         mTouchForwardingLayout = mContainer.findViewById(R.id.touch_forwarding_layout);
         mTouchForwardingLayout.setForwardingEnabled(true);
+
+        // Update preview header color which covers toolbar and status bar area.
+        View previewHeader = view.findViewById(R.id.preview_header);
+        previewHeader.setBackgroundColor(activity.getColor(R.color.settingslib_colorSurfaceHeader));
 
         // Set aspect ratio on the preview card dynamically.
         ConstraintSet set = new ConstraintSet();
@@ -482,17 +486,7 @@ public class ImagePreviewFragment extends PreviewFragment {
     protected void setCurrentWallpaper(@Destination int destination) {
         mWallpaperSetter.setCurrentWallpaper(getActivity(), mWallpaper, mWallpaperAsset,
                 destination, mFullResImageView.getScale(), calculateCropRect(getContext()),
-                mWallpaperColors, new SetWallpaperCallback() {
-                    @Override
-                    public void onSuccess(WallpaperInfo wallpaperInfo) {
-                        finishActivity(/* success= */ true);
-                    }
-
-                    @Override
-                    public void onError(@Nullable Throwable throwable) {
-                        showSetWallpaperErrorDialog(destination);
-                    }
-                });
+                mWallpaperColors, SetWallpaperViewModel.getCallback(mViewModelProvider));
     }
 
     private void renderWorkspaceSurface() {
@@ -568,17 +562,22 @@ public class ImagePreviewFragment extends PreviewFragment {
                 // Load a low-res placeholder image if there's a thumbnail available from the asset
                 // that can be shown to the user more quickly than the full-sized image.
                 Activity activity = requireActivity();
+                // Change to background color if colorValue is Color.TRANSPARENT
                 int placeHolderColor = ResourceUtils.getColorAttr(activity,
                         android.R.attr.colorBackground);
                 if (mPlaceholderColorFuture.isDone()) {
                     try {
-                        placeHolderColor = mWallpaper.computePlaceholderColor(context).get();
+                        int colorValue = mWallpaper.computePlaceholderColor(context).get();
+                        if (colorValue != Color.TRANSPARENT) {
+                            placeHolderColor = colorValue;
+                        }
                     } catch (InterruptedException | ExecutionException e) {
                         // Do nothing
                     }
                 }
                 mWallpaperSurface.setResizeBackgroundColor(placeHolderColor);
                 mWallpaperSurface.setBackgroundColor(placeHolderColor);
+                mLowResImageView.setBackgroundColor(placeHolderColor);
 
                 mWallpaperAsset.loadLowResDrawable(activity, mLowResImageView, placeHolderColor,
                         mPreviewBitmapTransformation);
@@ -595,6 +594,9 @@ public class ImagePreviewFragment extends PreviewFragment {
                 mHost.setView(wallpaperPreviewContainer, wallpaperPreviewContainer.getWidth(),
                         wallpaperPreviewContainer.getHeight());
                 mWallpaperSurface.setChildSurfacePackage(mHost.getSurfacePackage());
+                // After surface creating, update workspaceSurface.
+                mIsSurfaceCreated = true;
+                updateScreenPreview(mLastSelectedTabPositionOptional.orElse(0) == 0);
             }
         }
 
@@ -609,12 +611,15 @@ public class ImagePreviewFragment extends PreviewFragment {
                 mHost.release();
                 mHost = null;
             }
+            mIsSurfaceCreated = false;
         }
     }
 
     @Override
     protected void updateScreenPreview(boolean isHomeSelected) {
-        mWorkspaceSurface.setVisibility(isHomeSelected ? View.VISIBLE : View.INVISIBLE);
+        // Use View.GONE for WorkspaceSurface's visibility before its surface is created.
+        mWorkspaceSurface.setVisibility(isHomeSelected && mIsSurfaceCreated ? View.VISIBLE :
+                View.GONE);
 
         mLockPreviewContainer.setVisibility(isHomeSelected ? View.INVISIBLE : View.VISIBLE);
 
