@@ -357,4 +357,9 @@
     <!-- Content description of wallpaper preview card (lockscreen). [CHAR_LIMIT=40]-->
     <string name="lockscreen_wallpaper_preview_card_content_description" msgid="8575577284424318765">Lockscreen wallpaper preview</string>
 
+    <!-- Task affinity name for full screen preview's Activity stack -->
+    <string name="full_screen_task_affinity" translatable="false">.fullscreen</string>
+
+    <!-- Label for a button / menu item that allows the user to apply the currently selected customization option. [CHAR LIMIT=20] -->
+    <string name="apply_btn" msgid="7965877231041987336">Apply</string>
 </resources>

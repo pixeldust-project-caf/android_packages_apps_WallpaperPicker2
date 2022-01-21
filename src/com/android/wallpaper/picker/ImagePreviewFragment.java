@@ -328,10 +328,11 @@ public class ImagePreviewFragment extends PreviewFragment {
                     if (mFullResImageView != null) {
                         // Set page bitmap.
                         mFullResImageView.setImage(ImageSource.bitmap(pageBitmap));
+                        // Hide full image view then show it when wallpaper color is updated
+                        mFullResImageView.setAlpha(0f);
 
                         setDefaultWallpaperZoomAndScroll(
                                 mWallpaperAsset instanceof CurrentWallpaperAssetVN);
-                        crossFadeInMosaicView();
                         mFullResImageView.setOnStateChangedListener(
                                 new SubsamplingScaleImageView.DefaultOnStateChangedListener() {
                                     @Override
@@ -398,7 +399,12 @@ public class ImagePreviewFragment extends PreviewFragment {
                                 cropped.recycle();
                             }
                             if (mRecalculateColorCounter.decrementAndGet() == 0) {
-                                Handler.getMain().post(() -> onWallpaperColorsChanged(colors));
+                                Handler.getMain().post(() -> {
+                                    onWallpaperColorsChanged(colors);
+                                    if (mFullResImageView.getAlpha() == 0f) {
+                                        crossFadeInMosaicView();
+                                    }
+                                });
                             }
                         });
                     }
@@ -415,24 +421,26 @@ public class ImagePreviewFragment extends PreviewFragment {
      * indicator.
      */
     private void crossFadeInMosaicView() {
-        long shortAnimationDuration = getResources().getInteger(
-                android.R.integer.config_shortAnimTime);
+        if (getActivity() != null && isAdded()) {
+            long shortAnimationDuration = getResources().getInteger(
+                    android.R.integer.config_shortAnimTime);
 
-        mFullResImageView.setAlpha(0f);
-        mFullResImageView.animate()
-                .alpha(1f)
-                .setInterpolator(ALPHA_OUT)
-                .setDuration(shortAnimationDuration)
-                .setListener(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        // Clear the thumbnail bitmap reference to save memory since it's no longer
-                        // visible.
-                        if (mLowResImageView != null) {
-                            mLowResImageView.setImageBitmap(null);
+            mFullResImageView.setAlpha(0f);
+            mFullResImageView.animate()
+                    .alpha(1f)
+                    .setInterpolator(ALPHA_OUT)
+                    .setDuration(shortAnimationDuration)
+                    .setListener(new AnimatorListenerAdapter() {
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            // Clear the thumbnail bitmap reference to save memory since it's no
+                            // longer visible.
+                            if (mLowResImageView != null) {
+                                mLowResImageView.setImageBitmap(null);
+                            }
                         }
-                    }
-                });
+                    });
+        }
     }
 
     /**
@@ -496,8 +504,8 @@ public class ImagePreviewFragment extends PreviewFragment {
         Point hostViewSize = new Point(cropWidth, cropHeight);
 
         Resources res = appContext.getResources();
-        Point cropSurfaceSize = WallpaperCropUtils.calculateCropSurfaceSize(res, maxCrop, minCrop);
-
+        Point cropSurfaceSize = WallpaperCropUtils.calculateCropSurfaceSize(res, maxCrop, minCrop,
+                cropWidth, cropHeight);
         return WallpaperCropUtils.calculateCropRect(appContext, hostViewSize,
                 cropSurfaceSize, mRawWallpaperSize, visibleFileRect, wallpaperZoom);
     }
