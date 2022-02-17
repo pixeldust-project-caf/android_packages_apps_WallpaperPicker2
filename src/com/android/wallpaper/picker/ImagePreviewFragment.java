@@ -180,7 +180,12 @@ public class ImagePreviewFragment extends PreviewFragment {
                 mLockPreviewContainer);
         mLockScreenPreviewer.setDateViewVisibility(!mFullScreenAnimation.isFullScreen());
         mFullScreenAnimation.setFullScreenStatusListener(
-                isFullScreen -> mLockScreenPreviewer.setDateViewVisibility(!isFullScreen));
+                isFullScreen -> {
+                    mLockScreenPreviewer.setDateViewVisibility(!isFullScreen);
+                    if (!isFullScreen) {
+                        mBottomActionBar.focusAccessibilityAction(EDIT);
+                    }
+                });
         setUpTabs(view.findViewById(R.id.separated_tabs));
 
         view.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
@@ -328,10 +333,11 @@ public class ImagePreviewFragment extends PreviewFragment {
                     if (mFullResImageView != null) {
                         // Set page bitmap.
                         mFullResImageView.setImage(ImageSource.bitmap(pageBitmap));
+                        // Hide full image view then show it when wallpaper color is updated
+                        mFullResImageView.setAlpha(0f);
 
                         setDefaultWallpaperZoomAndScroll(
                                 mWallpaperAsset instanceof CurrentWallpaperAssetVN);
-                        crossFadeInMosaicView();
                         mFullResImageView.setOnStateChangedListener(
                                 new SubsamplingScaleImageView.DefaultOnStateChangedListener() {
                                     @Override
@@ -398,7 +404,12 @@ public class ImagePreviewFragment extends PreviewFragment {
                                 cropped.recycle();
                             }
                             if (mRecalculateColorCounter.decrementAndGet() == 0) {
-                                Handler.getMain().post(() -> onWallpaperColorsChanged(colors));
+                                Handler.getMain().post(() -> {
+                                    onWallpaperColorsChanged(colors);
+                                    if (mFullResImageView.getAlpha() == 0f) {
+                                        crossFadeInMosaicView();
+                                    }
+                                });
                             }
                         });
                     }
@@ -415,24 +426,26 @@ public class ImagePreviewFragment extends PreviewFragment {
      * indicator.
      */
     private void crossFadeInMosaicView() {
-        long shortAnimationDuration = getResources().getInteger(
-                android.R.integer.config_shortAnimTime);
+        if (getActivity() != null && isAdded()) {
+            long shortAnimationDuration = getResources().getInteger(
+                    android.R.integer.config_shortAnimTime);
 
-        mFullResImageView.setAlpha(0f);
-        mFullResImageView.animate()
-                .alpha(1f)
-                .setInterpolator(ALPHA_OUT)
-                .setDuration(shortAnimationDuration)
-                .setListener(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        // Clear the thumbnail bitmap reference to save memory since it's no longer
-                        // visible.
-                        if (mLowResImageView != null) {
-                            mLowResImageView.setImageBitmap(null);
+            mFullResImageView.setAlpha(0f);
+            mFullResImageView.animate()
+                    .alpha(1f)
+                    .setInterpolator(ALPHA_OUT)
+                    .setDuration(shortAnimationDuration)
+                    .setListener(new AnimatorListenerAdapter() {
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            // Clear the thumbnail bitmap reference to save memory since it's no
+                            // longer visible.
+                            if (mLowResImageView != null) {
+                                mLowResImageView.setImageBitmap(null);
+                            }
                         }
-                    }
-                });
+                    });
+        }
     }
 
     /**
@@ -496,16 +509,25 @@ public class ImagePreviewFragment extends PreviewFragment {
         Point hostViewSize = new Point(cropWidth, cropHeight);
 
         Resources res = appContext.getResources();
-        Point cropSurfaceSize = WallpaperCropUtils.calculateCropSurfaceSize(res, maxCrop, minCrop);
-
+        Point cropSurfaceSize = WallpaperCropUtils.calculateCropSurfaceSize(res, maxCrop, minCrop,
+                cropWidth, cropHeight);
         return WallpaperCropUtils.calculateCropRect(appContext, hostViewSize,
                 cropSurfaceSize, mRawWallpaperSize, visibleFileRect, wallpaperZoom);
     }
 
     @Override
     protected void setCurrentWallpaper(@Destination int destination) {
+        Rect cropRect = calculateCropRect(getContext());
+        float screenScale = WallpaperCropUtils.getScaleOfScreenResolution(
+                mFullResImageView.getScale(), cropRect, mWallpaperScreenSize.x,
+                mWallpaperScreenSize.y);
+        Rect scaledCropRect = new Rect(
+                Math.round((float) cropRect.left * screenScale),
+                Math.round((float) cropRect.top * screenScale),
+                Math.round((float) cropRect.right * screenScale),
+                Math.round((float) cropRect.bottom * screenScale));
         mWallpaperSetter.setCurrentWallpaper(getActivity(), mWallpaper, mWallpaperAsset,
-                destination, mFullResImageView.getScale(), calculateCropRect(getContext()),
+                destination, mFullResImageView.getScale() * screenScale, scaledCropRect,
                 mWallpaperColors, SetWallpaperViewModel.getCallback(mViewModelProvider));
     }
 

@@ -24,8 +24,8 @@ import androidx.fragment.app.Fragment;
 import com.android.wallpaper.model.CategoryProvider;
 import com.android.wallpaper.model.WallpaperInfo;
 import com.android.wallpaper.monitor.PerformanceMonitor;
+import com.android.wallpaper.picker.CustomizationPickerActivity;
 import com.android.wallpaper.picker.ImagePreviewFragment;
-import com.android.wallpaper.picker.TopLevelPickerActivity;
 
 /**
  * A concrete, real implementation of the dependency provider.
@@ -72,15 +72,16 @@ public class WallpapersInjector extends BaseWallpaperInjector {
             WallpaperInfo wallpaperInfo,
             int mode,
             boolean viewAsHome,
+            boolean viewFullScreen,
             boolean testingModeEnabled) {
-        return ImagePreviewFragment.newInstance(wallpaperInfo, mode, viewAsHome,
+        return ImagePreviewFragment.newInstance(wallpaperInfo, mode, viewAsHome, viewFullScreen,
                 testingModeEnabled);
     }
 
     @Override
     public Intent getDeepLinkRedirectIntent(Context context, Uri uri) {
         Intent intent = new Intent();
-        intent.setClass(context, TopLevelPickerActivity.class);
+        intent.setClass(context, CustomizationPickerActivity.class);
         intent.setData(uri);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         return intent;

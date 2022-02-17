@@ -345,8 +345,10 @@ public class DefaultWallpaperPersister implements WallpaperPersister {
     }
 
     @Override
-    public int setWallpaperBitmapInNextRotation(Bitmap wallpaperBitmap) {
-        return cropAndSetWallpaperBitmapInRotationStatic(wallpaperBitmap);
+    public int setWallpaperBitmapInNextRotation(Bitmap wallpaperBitmap, List<String> attributions,
+            String actionUrl, String collectionId) {
+        return cropAndSetWallpaperBitmapInRotationStatic(wallpaperBitmap,
+                attributions, actionUrl, collectionId);
     }
 
     @Override
@@ -363,7 +365,8 @@ public class DefaultWallpaperPersister implements WallpaperPersister {
      */
     private boolean setWallpaperInRotationStatic(Bitmap wallpaperBitmap, List<String> attributions,
             String actionUrl, int actionLabelRes, int actionIconRes, String collectionId) {
-        final int wallpaperId = cropAndSetWallpaperBitmapInRotationStatic(wallpaperBitmap);
+        final int wallpaperId = cropAndSetWallpaperBitmapInRotationStatic(wallpaperBitmap,
+                attributions, actionUrl, collectionId);
 
         if (wallpaperId == 0) {
             return false;
@@ -421,7 +424,8 @@ public class DefaultWallpaperPersister implements WallpaperPersister {
      *
      * @return wallpaper ID for the wallpaper bitmap.
      */
-    private int cropAndSetWallpaperBitmapInRotationStatic(Bitmap wallpaperBitmap) {
+    private int cropAndSetWallpaperBitmapInRotationStatic(Bitmap wallpaperBitmap,
+            List<String> attributions, String actionUrl, String collectionId) {
         // Calculate crop and scale of the wallpaper to match the default one used in preview
         Point wallpaperSize = new Point(wallpaperBitmap.getWidth(), wallpaperBitmap.getHeight());
         Resources resources = mAppContext.getResources();
@@ -447,10 +451,10 @@ public class DefaultWallpaperPersister implements WallpaperPersister {
                 wallpaperSize, defaultCropSurfaceSize, screenSize, offsetX, offsetY);
 
         Rect scaledCropRect = new Rect(
-                Math.round((float) cropRect.left / minWallpaperZoom),
-                Math.round((float) cropRect.top / minWallpaperZoom),
-                Math.round((float) cropRect.right / minWallpaperZoom),
-                Math.round((float) cropRect.bottom / minWallpaperZoom));
+                (int) Math.floor((float) cropRect.left / minWallpaperZoom),
+                (int) Math.floor((float) cropRect.top / minWallpaperZoom),
+                (int) Math.floor((float) cropRect.right / minWallpaperZoom),
+                (int) Math.floor((float) cropRect.bottom / minWallpaperZoom));
 
         // Scale and crop the bitmap
         wallpaperBitmap = Bitmap.createBitmap(wallpaperBitmap,
@@ -460,8 +464,14 @@ public class DefaultWallpaperPersister implements WallpaperPersister {
                 scaledCropRect.height());
         int whichWallpaper = getDefaultWhichWallpaper();
 
-        return setBitmapToWallpaperManagerCompat(wallpaperBitmap, false /* allowBackup */,
-                whichWallpaper);
+        int wallpaperId = setBitmapToWallpaperManagerCompat(wallpaperBitmap,
+                /* allowBackup */ false, whichWallpaper);
+        if (wallpaperId > 0) {
+            mWallpaperPreferences.storeLatestHomeWallpaper(String.valueOf(wallpaperId),
+                    attributions, actionUrl, collectionId, wallpaperBitmap,
+                    WallpaperColors.fromBitmap(wallpaperBitmap));
+        }
+        return wallpaperId;
     }
 
     /*
