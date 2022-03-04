@@ -50,7 +50,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.RecyclerView.ViewHolder;
 
 import com.android.wallpaper.R;
-import com.android.wallpaper.asset.Asset;
 import com.android.wallpaper.model.Category;
 import com.android.wallpaper.model.CategoryProvider;
 import com.android.wallpaper.model.CategoryReceiver;
@@ -332,19 +331,11 @@ public class IndividualPickerFragment extends AppbarFragment
         updateLoading();
         maybeSetUpImageGrid();
         // For nav bar edge-to-edge effect.
-        view.setOnApplyWindowInsetsListener((v, windowInsets) -> {
-            // For status bar height.
+        mImageGrid.setOnApplyWindowInsetsListener((v, windowInsets) -> {
             v.setPadding(
                     v.getPaddingLeft(),
-                    windowInsets.getSystemWindowInsetTop(),
+                    v.getPaddingTop(),
                     v.getPaddingRight(),
-                    v.getPaddingBottom());
-
-            View gridView = v.findViewById(R.id.wallpaper_grid);
-            gridView.setPadding(
-                    gridView.getPaddingLeft(),
-                    gridView.getPaddingTop(),
-                    gridView.getPaddingRight(),
                     windowInsets.getSystemWindowInsetBottom());
             return windowInsets.consumeSystemWindowInsets();
         });
@@ -464,12 +455,6 @@ public class IndividualPickerFragment extends AppbarFragment
     public void onDestroyView() {
         super.onDestroyView();
         getIndividualPickerFragmentHost().removeToolbarMenu();
-        for (WallpaperInfo wallpaperInfo : mWallpapers) {
-            Asset asset = wallpaperInfo.getThumbAsset(getActivity().getApplicationContext());
-            if (asset != null) {
-                asset.release();
-            }
-        }
     }
 
     @Override
