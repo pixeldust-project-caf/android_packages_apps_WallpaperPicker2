@@ -37,9 +37,12 @@ public class PassThroughCustomizationPickerActivity extends FragmentActivity {
     }
 
     private void retainBaseIntent() {
+        Bundle bundle = getIntent().getExtras();
+        bundle = (bundle == null) ? new Bundle() : bundle;
         // Trampoline for the phone without relinquishTaskIdentity case
         startActivityForResultSafely(this,
-                new Intent(this, CustomizationPickerActivity.class), /* requestCode= */ 0);
+                new Intent(this, CustomizationPickerActivity.class).putExtras(
+                        bundle), /* requestCode= */ 0);
         finish();
     }
 }
