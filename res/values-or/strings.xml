@@ -86,7 +86,7 @@
     <string name="delete_live_wallpaper" msgid="589212696102662329">"ଡିଲିଟ୍ କରନ୍ତୁ"</string>
     <string name="delete_wallpaper_confirmation" msgid="33790318361863778">"ଆପଣଙ୍କର ଫୋନ୍‌ରୁ ଏହି ୱାଲ୍‌ପେପର୍‌କୁ ଡିଲିଟ୍ କରିବେ କି?"</string>
     <string name="bottom_action_bar_back" msgid="8237013112999946725">"ପଛକୁ ଫେରନ୍ତୁ"</string>
-    <string name="bottom_action_bar_edit" msgid="1214742990893082138">"ସମ୍ପାଦନ କରନ୍ତୁ"</string>
+    <string name="bottom_action_bar_edit" msgid="1214742990893082138">"ଏଡିଟ କରନ୍ତୁ"</string>
     <string name="bottom_action_bar_download" msgid="3983122338076389421">"ଡାଉନଲୋଡ୍ କରନ୍ତୁ"</string>
     <string name="bottom_action_bar_slideshow_wallpaper" msgid="509770525179533154">"ୱାଲପେପରର ସ୍ଲାଇଡଶୋ"</string>
     <string name="bottom_action_bar_apply" msgid="2983308349819178932">"ଲାଗୁ କରନ୍ତୁ"</string>
@@ -111,4 +111,19 @@
     <string name="settings_snackbar_description" msgid="890168814524778486">"ଦୟାକରି ସେଟିଂସରେ ଫାଇଲଗୁଡ଼ିକ ଏବଂ ମିଡିଆକୁ ସକ୍ଷମ କରନ୍ତୁ।"</string>
     <string name="settings_snackbar_enable" msgid="5992112808061426068">"ସକ୍ଷମ କରନ୍ତୁ"</string>
     <string name="open_my_photos" msgid="4107196465713868381">"ମୋ ଫଟୋଗୁଡ଼ିକ ଖୋଲନ୍ତୁ"</string>
+    <string name="channel_day_and_night" msgid="3471913688828228175">"ଦିନ ଓ ରାତି ୱାଲପେପର"</string>
+    <!-- no translation found for bottom_action_bar_settings (5840642445243257179) -->
+    <skip />
+    <!-- no translation found for location_permission_title (5227656662650091926) -->
+    <skip />
+    <!-- no translation found for location_permission_disabled_subtitle (3684878299611314354) -->
+    <skip />
+    <!-- no translation found for location_permission_enabled_subtitle (1567408469692191044) -->
+    <skip />
+    <!-- no translation found for location_permission_enable (951505048063245139) -->
+    <skip />
+    <!-- no translation found for location_permission_disable (4534586210084066675) -->
+    <skip />
+    <!-- no translation found for request_permission_settings_snackbar_description (8014751482538339781) -->
+    <skip />
 </resources>

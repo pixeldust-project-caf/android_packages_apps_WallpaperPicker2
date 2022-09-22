@@ -794,9 +794,10 @@ public class DefaultWallpaperPersister implements WallpaperPersister {
             if (mWallpaper instanceof AdaptiveWallpaperInfo) {
                 mWallpaperPreferences.setAppliedAdaptiveType(
                         AdaptiveWallpaperUtils.getCurrentAdaptiveType(System.currentTimeMillis(),
-                                null));
+                                AdaptiveWallpaperUtils.getLocation(mAppContext)));
                 mWallpaperPreferences.setWallpaperPresentationMode(
                         WallpaperPreferences.PRESENTATION_MODE_ADAPTIVE);
+                mWallpaperPreferences.setAppliedAdaptiveWallpaperId(mWallpaper.getWallpaperId());
             }
 
             mWallpaperPreferences.clearDailyRotations();
