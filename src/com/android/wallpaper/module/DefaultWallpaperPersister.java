@@ -45,8 +45,10 @@ import com.android.wallpaper.asset.BitmapUtils;
 import com.android.wallpaper.asset.StreamableAsset;
 import com.android.wallpaper.asset.StreamableAsset.StreamReceiver;
 import com.android.wallpaper.compat.WallpaperManagerCompat;
+import com.android.wallpaper.model.AdaptiveWallpaperInfo;
 import com.android.wallpaper.model.WallpaperInfo;
 import com.android.wallpaper.module.BitmapCropper.Callback;
+import com.android.wallpaper.util.AdaptiveWallpaperUtils;
 import com.android.wallpaper.util.BitmapTransformer;
 import com.android.wallpaper.util.DisplayUtils;
 import com.android.wallpaper.util.ScreenSizeCalculator;
@@ -595,6 +597,7 @@ public class DefaultWallpaperPersister implements WallpaperPersister {
         mWallpaperPreferences.setWallpaperPresentationMode(
                 WallpaperPreferences.PRESENTATION_MODE_STATIC);
         mWallpaperPreferences.clearDailyRotations();
+        mWallpaperPreferences.setWallpaperEffects(mWallpaperInfoInPreview.getEffectNames());
     }
 
     private class SetWallpaperTask extends AsyncTask<Void, Void, Boolean> {
@@ -773,6 +776,7 @@ public class DefaultWallpaperPersister implements WallpaperPersister {
         private void setImageWallpaperMetadata(@Destination int destination, int wallpaperId) {
             if (destination == DEST_HOME_SCREEN || destination == DEST_BOTH) {
                 mWallpaperPreferences.clearHomeWallpaperMetadata();
+                mWallpaperPreferences.setWallpaperEffects(null);
                 setImageWallpaperHomeMetadata(wallpaperId);
 
                 // Reset presentation mode to STATIC if an individual wallpaper is set to the
@@ -785,6 +789,14 @@ public class DefaultWallpaperPersister implements WallpaperPersister {
             if (destination == DEST_LOCK_SCREEN || destination == DEST_BOTH) {
                 mWallpaperPreferences.clearLockWallpaperMetadata();
                 setImageWallpaperLockMetadata(wallpaperId);
+            }
+
+            if (mWallpaper instanceof AdaptiveWallpaperInfo) {
+                mWallpaperPreferences.setAppliedAdaptiveType(
+                        AdaptiveWallpaperUtils.getCurrentAdaptiveType(System.currentTimeMillis(),
+                                null));
+                mWallpaperPreferences.setWallpaperPresentationMode(
+                        WallpaperPreferences.PRESENTATION_MODE_ADAPTIVE);
             }
 
             mWallpaperPreferences.clearDailyRotations();

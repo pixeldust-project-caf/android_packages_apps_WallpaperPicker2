@@ -24,6 +24,7 @@ import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.android.wallpaper.model.AdaptiveType;
 import com.android.wallpaper.model.LiveWallpaperInfo;
 import com.android.wallpaper.model.WallpaperInfo;
 import com.android.wallpaper.module.WallpaperPersister.Destination;
@@ -37,6 +38,7 @@ public interface WallpaperPreferences {
 
     int PRESENTATION_MODE_STATIC = 1;
     int PRESENTATION_MODE_ROTATING = 2;
+    int PRESENTATION_MODE_ADAPTIVE = 3;
     int WALLPAPER_SET_NOT_PENDING = 0;
     int WALLPAPER_SET_PENDING = 1;
     int DAILY_WALLPAPER_UPDATE_NOT_PENDING = 0;
@@ -505,11 +507,39 @@ public interface WallpaperPreferences {
             String wallpaperId);
 
     /**
-     * The possible wallpaper presentation modes, i.e., either "static" or "rotating".
+     * Gets the wallpaper's effects.
+     */
+    String getWallpaperEffects();
+
+    /**
+     * Sets the wallpaper's effects to SharedPreferences.
+     *
+     * @param wallpaperEffects The wallpaper effects.
+     */
+    void setWallpaperEffects(String wallpaperEffects);
+
+    /**
+     * Gets the applied adaptive type saved in SharedPreferences.
+     */
+    AdaptiveType getAppliedAdaptiveType();
+
+    /**
+     * Sets the applied adaptive type to SharedPreferences.
+     */
+    void setAppliedAdaptiveType(AdaptiveType type);
+
+    /**
+     * Clears adaptive-related preferences.
+     */
+    void clearAdaptiveData();
+
+    /**
+     * The possible wallpaper presentation modes, i.e., either "static" or "rotating" or "adaptive".
      */
     @IntDef({
             PRESENTATION_MODE_STATIC,
-            PRESENTATION_MODE_ROTATING})
+            PRESENTATION_MODE_ROTATING,
+            PRESENTATION_MODE_ADAPTIVE})
     @interface PresentationMode {
     }
 

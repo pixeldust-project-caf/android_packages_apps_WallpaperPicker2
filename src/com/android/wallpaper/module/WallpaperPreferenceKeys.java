@@ -39,6 +39,8 @@ public class WallpaperPreferenceKeys {
     public static final String KEY_LOCK_WALLPAPER_HASH_CODE = "lock_wallpaper_hash_code";
     public static final String KEY_LOCK_WALLPAPER_COLLECTION_ID = "lock_wallpaper_collection_id";
 
+    public static final String KEY_APPLIED_ADAPTIVE_TYPE = "applied_adaptive_type";
+
     /**
      * Preferences with these keys should not be backed up
      */
@@ -76,5 +78,6 @@ public class WallpaperPreferenceKeys {
         String KEY_HOME_WALLPAPER_PACKAGE_NAME = "home_wallpaper_package_name";
         String KEY_HOME_WALLPAPER_SERVICE_NAME = "home_wallpaper_service_name";
         String KEY_PREVIEW_WALLPAPER_COLOR_ID = "preview_wallpaper_color_id";
+        String KEY_WALLPAPER_EFFECTS = "wallpaper_effects";
     }
 }

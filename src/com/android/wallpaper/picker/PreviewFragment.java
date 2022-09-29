@@ -47,6 +47,7 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.android.wallpaper.R;
+import com.android.wallpaper.model.AdaptiveWallpaperInfo;
 import com.android.wallpaper.model.LiveWallpaperInfo;
 import com.android.wallpaper.model.SetWallpaperViewModel;
 import com.android.wallpaper.model.WallpaperInfo;
@@ -186,12 +187,6 @@ public abstract class PreviewFragment extends AppbarFragment implements
 
         mViewModelProvider = new ViewModelProvider(requireActivity());
         mSetWallpaperViewModel = mViewModelProvider.get(SetWallpaperViewModel.class);
-
-        Activity activity = getActivity();
-        List<String> attributions = getAttributions(activity);
-        if (attributions.size() > 0 && attributions.get(0) != null) {
-            activity.setTitle(attributions.get(0));
-        }
     }
 
     @Override
@@ -323,7 +318,8 @@ public abstract class PreviewFragment extends AppbarFragment implements
             });
             setUpToolbarMenuClickListener(R.id.action_set_wallpaper,
                     view -> mWallpaperSetter.requestDestination(getActivity(), getFragmentManager(),
-                            this, mWallpaper instanceof LiveWallpaperInfo));
+                            this, mWallpaper instanceof LiveWallpaperInfo,
+                            mWallpaper instanceof AdaptiveWallpaperInfo));
         }
 
         mFullScreenAnimation.ensureBottomActionBarIsCorrectlyLocated();
@@ -419,7 +415,8 @@ public abstract class PreviewFragment extends AppbarFragment implements
 
     protected void onSetWallpaperClicked(View button, WallpaperInfo wallpaperInfo) {
         mWallpaperSetter.requestDestination(getActivity(), getFragmentManager(), this,
-                wallpaperInfo instanceof LiveWallpaperInfo);
+                wallpaperInfo instanceof LiveWallpaperInfo,
+                wallpaperInfo instanceof AdaptiveWallpaperInfo);
     }
 
     protected void setUpTabs(TabLayout tabs) {
@@ -468,10 +465,14 @@ public abstract class PreviewFragment extends AppbarFragment implements
             } catch (NotFoundException e) {
                 Log.e(TAG, "Could not show toast " + e);
             }
-            activity.setResult(Activity.RESULT_OK);
+            setResult(activity);
         }
         activity.finish();
         activity.overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+    }
+
+    protected void setResult(Activity activity) {
+        activity.setResult(Activity.RESULT_OK);
     }
 
     protected void showSetWallpaperErrorDialog(@Destination int wallpaperDestination) {
