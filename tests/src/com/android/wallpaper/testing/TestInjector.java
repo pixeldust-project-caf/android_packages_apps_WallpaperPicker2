@@ -15,9 +15,16 @@
  */
 package com.android.wallpaper.testing;
 
+import static com.android.wallpaper.picker.PreviewFragment.ARG_FULL_SCREEN;
+import static com.android.wallpaper.picker.PreviewFragment.ARG_PREVIEW_MODE;
+import static com.android.wallpaper.picker.PreviewFragment.ARG_TESTING_MODE_ENABLED;
+import static com.android.wallpaper.picker.PreviewFragment.ARG_VIEW_AS_HOME;
+import static com.android.wallpaper.picker.PreviewFragment.ARG_WALLPAPER;
+
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Bundle;
 
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -35,7 +42,6 @@ import com.android.wallpaper.module.DrawableLayerResolver;
 import com.android.wallpaper.module.ExploreIntentChecker;
 import com.android.wallpaper.module.Injector;
 import com.android.wallpaper.module.LiveWallpaperInfoFactory;
-import com.android.wallpaper.module.LoggingOptInStatusProvider;
 import com.android.wallpaper.module.NetworkStatusNotifier;
 import com.android.wallpaper.module.PackageStatusNotifier;
 import com.android.wallpaper.module.PartnerProvider;
@@ -73,7 +79,6 @@ public class TestInjector implements Injector {
     private SystemFeatureChecker mSystemFeatureChecker;
     private WallpaperRotationRefresher mWallpaperRotationRefresher;
     private PerformanceMonitor mPerformanceMonitor;
-    private LoggingOptInStatusProvider mLoggingOptInStatusProvider;
 
     @Override
     public BitmapCropper getBitmapCropper() {
@@ -153,20 +158,12 @@ public class TestInjector implements Injector {
     }
 
     @Override
-    public CurrentWallpaperInfoFactory getCurrentWallpaperFactory(Context context) {
+    public CurrentWallpaperInfoFactory getCurrentWallpaperInfoFactory(Context context) {
         if (mCurrentWallpaperInfoFactory == null) {
             mCurrentWallpaperInfoFactory =
                     new TestCurrentWallpaperInfoFactory(context.getApplicationContext());
         }
         return mCurrentWallpaperInfoFactory;
-    }
-
-    @Override
-    public LoggingOptInStatusProvider getLoggingOptInStatusProvider(Context context) {
-        if (mLoggingOptInStatusProvider == null) {
-            mLoggingOptInStatusProvider = new TestLoggingOptInStatusProvider();
-        }
-        return mLoggingOptInStatusProvider;
     }
 
     @Override
@@ -223,8 +220,15 @@ public class TestInjector implements Injector {
     @Override
     public Fragment getPreviewFragment(Context context, WallpaperInfo wallpaperInfo, int mode,
             boolean viewAsHome, boolean viewFullScreen, boolean testingModeEnabled) {
-        return ImagePreviewFragment.newInstance(wallpaperInfo, mode, viewAsHome,
-                viewFullScreen, testingModeEnabled);
+        Bundle args = new Bundle();
+        args.putParcelable(ARG_WALLPAPER, wallpaperInfo);
+        args.putInt(ARG_PREVIEW_MODE, mode);
+        args.putBoolean(ARG_VIEW_AS_HOME, viewAsHome);
+        args.putBoolean(ARG_FULL_SCREEN, viewFullScreen);
+        args.putBoolean(ARG_TESTING_MODE_ENABLED, testingModeEnabled);
+        ImagePreviewFragment fragment = new ImagePreviewFragment();
+        fragment.setArguments(args);
+        return fragment;
     }
 
     @Override
@@ -277,7 +281,7 @@ public class TestInjector implements Injector {
 
     @Nullable
     @Override
-    public EffectsController createEffectsController(Context context,
+    public EffectsController getEffectsController(Context context,
             EffectsController.EffectsServiceListener listener) {
         return null;
     }
