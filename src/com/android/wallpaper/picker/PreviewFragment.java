@@ -47,7 +47,6 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.android.wallpaper.R;
-import com.android.wallpaper.model.AdaptiveWallpaperInfo;
 import com.android.wallpaper.model.LiveWallpaperInfo;
 import com.android.wallpaper.model.SetWallpaperViewModel;
 import com.android.wallpaper.model.WallpaperInfo;
@@ -105,25 +104,6 @@ public abstract class PreviewFragment extends AppbarFragment implements
     public static final String ARG_VIEW_AS_HOME = "view_as_home";
     public static final String ARG_FULL_SCREEN = "view_full_screen";
     public static final String ARG_TESTING_MODE_ENABLED = "testing_mode_enabled";
-
-    /**
-     * Creates and returns new instance of {@link ImagePreviewFragment} with the provided wallpaper
-     * set as an argument.
-     */
-    public static PreviewFragment newInstance(WallpaperInfo wallpaperInfo, @PreviewMode int mode,
-            boolean viewAsHome, boolean viewFullScreen, boolean testingModeEnabled) {
-        Bundle args = new Bundle();
-        args.putParcelable(ARG_WALLPAPER, wallpaperInfo);
-        args.putInt(ARG_PREVIEW_MODE, mode);
-        args.putBoolean(ARG_VIEW_AS_HOME, viewAsHome);
-        args.putBoolean(ARG_FULL_SCREEN, viewFullScreen);
-        args.putBoolean(ARG_TESTING_MODE_ENABLED, testingModeEnabled);
-
-        PreviewFragment fragment = wallpaperInfo instanceof LiveWallpaperInfo
-                ? new LivePreviewFragment() : new ImagePreviewFragment();
-        fragment.setArguments(args);
-        return fragment;
-    }
 
     private static final String TAG_LOAD_WALLPAPER_ERROR_DIALOG_FRAGMENT =
             "load_wallpaper_error_dialog";
@@ -274,7 +254,7 @@ public abstract class PreviewFragment extends AppbarFragment implements
             return;
         }
         startActivity(FullPreviewActivity.newIntent(getActivity(), wallpaperInfo,
-                /* viewAsHome= */ mLastSelectedTabPositionOptional.orElse(0) == 0),
+                        /* viewAsHome= */ mLastSelectedTabPositionOptional.orElse(0) == 0),
                 ActivityOptions.makeSceneTransitionAnimation(getActivity()).toBundle());
     }
 
@@ -299,7 +279,7 @@ public abstract class PreviewFragment extends AppbarFragment implements
                     }
             );
             container.findViewById(R.id.set_as_wallpaper_button).setOnClickListener(
-                    unused -> onSetWallpaperClicked(null, mWallpaper));
+                    unused -> onSetWallpaperClicked(null, getCurrentWallpaperInfo()));
         } else {
             container.findViewById(R.id.hide_ui_preview_button).setVisibility(View.GONE);
             container.findViewById(R.id.set_as_wallpaper_button).setVisibility(View.GONE);
@@ -318,11 +298,14 @@ public abstract class PreviewFragment extends AppbarFragment implements
             });
             setUpToolbarMenuClickListener(R.id.action_set_wallpaper,
                     view -> mWallpaperSetter.requestDestination(getActivity(), getFragmentManager(),
-                            this, mWallpaper instanceof LiveWallpaperInfo,
-                            mWallpaper instanceof AdaptiveWallpaperInfo));
+                            this, mWallpaper instanceof LiveWallpaperInfo));
         }
 
         mFullScreenAnimation.ensureBottomActionBarIsCorrectlyLocated();
+    }
+
+    protected WallpaperInfo getCurrentWallpaperInfo() {
+        return mWallpaper;
     }
 
     protected List<String> getAttributions(Context context) {
@@ -415,8 +398,7 @@ public abstract class PreviewFragment extends AppbarFragment implements
 
     protected void onSetWallpaperClicked(View button, WallpaperInfo wallpaperInfo) {
         mWallpaperSetter.requestDestination(getActivity(), getFragmentManager(), this,
-                wallpaperInfo instanceof LiveWallpaperInfo,
-                wallpaperInfo instanceof AdaptiveWallpaperInfo);
+                wallpaperInfo instanceof LiveWallpaperInfo);
     }
 
     protected void setUpTabs(TabLayout tabs) {

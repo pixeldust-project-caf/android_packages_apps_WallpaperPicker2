@@ -13,23 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.wallpaper.util
+package com.android.wallpaper.module
 
-import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
+import androidx.fragment.app.Fragment
+import com.android.wallpaper.model.WallpaperInfo
 
-/**
- * An util class for permission related usage.
- */
-object PermissionUtils {
-
-    /**
-     * Returns whether ACCESS_COARSE_LOCATION has been granted for the application.
-     */
-    @JvmStatic
-    fun isAccessCoarseLocationPermissionGranted(context: Context): Boolean {
-        return context.packageManager.checkPermission(Manifest.permission.ACCESS_COARSE_LOCATION,
-            context.packageName) == PackageManager.PERMISSION_GRANTED
-    }
+/** A manager that provides the wallpaper preview fragment. */
+interface WallpaperPreviewFragmentManager {
+    fun getPreviewFragment(
+        context: Context,
+        wallpaperInfo: WallpaperInfo,
+        mode: Int,
+        viewAsHome: Boolean,
+        viewFullScreen: Boolean,
+        testingModeEnabled: Boolean
+    ): Fragment
 }

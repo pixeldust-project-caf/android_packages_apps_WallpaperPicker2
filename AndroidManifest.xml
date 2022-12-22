@@ -14,7 +14,10 @@
   <uses-permission android:name="android.permission.INTERNET"/>
   <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
   <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+  <uses-permission android:name="android.permission.READ_WALLPAPER_INTERNAL" />
   <uses-permission android:name="android.permission.SET_WALLPAPER"/>
+  <uses-permission android:name="android.permission.SET_WALLPAPER_COMPONENT" />
+  <uses-permission android:name="android.permission.BIND_WALLPAPER" />
   <uses-permission android:name="android.permission.WAKE_LOCK"/>
   <uses-permission android:name="com.android.wallpaper.NOTIFY_ROTATING_WALLPAPER_CHANGED"/>
 
@@ -41,6 +44,11 @@
       <intent>
           <action android:name="com.android.launcher3.action.PARTNER_CUSTOMIZATION" />
       </intent>
+      <!-- Intent filter used to query the launcher Activity for grid preview metadata -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.HOME" />
+        </intent>
   </queries>
 
   <application
@@ -136,24 +144,6 @@
          android:resizeableActivity="false"
          android:theme="@style/WallpaperTheme.Preview">
     </activity>
-
-    <service android:name="com.android.wallpaper.adaptive.AdaptiveJobService"
-        android:exported="true"
-        android:foregroundServiceType="location"
-        android:permission="android.permission.BIND_JOB_SERVICE"/>
-
-    <receiver android:name="com.android.wallpaper.module.AdaptiveBroadcastReceiver"
-        android:exported="true">
-        <intent-filter>
-            <action android:name="android.intent.action.TIMEZONE_CHANGED"/>
-        </intent-filter>
-        <intent-filter>
-            <action android:name="android.intent.action.TIME_SET"/>
-        </intent-filter>
-        <intent-filter>
-            <action android:name="android.intent.action.BOOT_COMPLETED"/>
-        </intent-filter>
-    </receiver>
   </application>
 
 </manifest>
