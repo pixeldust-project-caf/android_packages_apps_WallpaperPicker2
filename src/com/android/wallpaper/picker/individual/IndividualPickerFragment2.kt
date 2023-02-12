@@ -49,6 +49,7 @@ import com.android.wallpaper.R
 import com.android.wallpaper.model.Category
 import com.android.wallpaper.model.CategoryProvider
 import com.android.wallpaper.model.CategoryReceiver
+import com.android.wallpaper.model.LiveWallpaperInfo
 import com.android.wallpaper.model.WallpaperCategory
 import com.android.wallpaper.model.WallpaperInfo
 import com.android.wallpaper.model.WallpaperRotationInitializer
@@ -235,12 +236,16 @@ class IndividualPickerFragment2 :
                             }
                         )
                     }
+                    val currentWallpaper = WallpaperManager.getInstance(context).wallpaperInfo
                     items.addAll(
                         wallpapers.map {
-                            PickerItem.WallpaperItem(
-                                it,
-                                appliedWallpaperIds.contains(it.wallpaperId)
-                            )
+                            var isApplied =
+                                if (it is LiveWallpaperInfo) {
+                                    it.isApplied(currentWallpaper)
+                                } else {
+                                    appliedWallpaperIds.contains(it.wallpaperId)
+                                }
+                            PickerItem.WallpaperItem(it, isApplied)
                         }
                     )
                 }
@@ -437,7 +442,7 @@ class IndividualPickerFragment2 :
 
     override fun onResume() {
         super.onResume()
-        val preferences = InjectorProvider.getInjector().getPreferences(activity)
+        val preferences = InjectorProvider.getInjector().getPreferences(requireActivity())
         preferences.lastAppActiveTimestamp = Date().time
 
         // Reset Glide memory settings to a "normal" level of usage since it may have been lowered
@@ -607,7 +612,7 @@ class IndividualPickerFragment2 :
     }
 
     private fun getAppliedWallpaperIds(): Set<String> {
-        val prefs = InjectorProvider.getInjector().getPreferences(context)
+        val prefs = InjectorProvider.getInjector().getPreferences(requireContext())
         val wallpaperInfo = wallpaperManager?.wallpaperInfo
         val appliedWallpaperIds: MutableSet<String> = ArraySet()
         val homeWallpaperId =
