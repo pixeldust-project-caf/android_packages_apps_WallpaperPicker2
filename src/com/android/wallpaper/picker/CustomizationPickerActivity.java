@@ -109,7 +109,9 @@ public class CustomizationPickerActivity extends FragmentActivity implements App
         // See go/pdr-edge-to-edge-guide.
         WindowCompat.setDecorFitsSystemWindows(getWindow(), isSUWMode(this));
 
-        final boolean isUseRevampedUi = injector.getFlags().isUseRevampedUi(this);
+        final boolean isUseRevampedUi = injector.getFlags().isRevampedUiEnabled(this);
+        final boolean startFromLockScreen = getIntent() == null
+                || !ActivityUtils.isLaunchedFromLauncher(getIntent());
 
         Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
         if (fragment == null) {
@@ -123,10 +125,11 @@ public class CustomizationPickerActivity extends FragmentActivity implements App
             // Switch to the target fragment.
             switchFragment(isWallpaperOnlyMode(getIntent())
                     ? new WallpaperOnlyFragment()
-                    : CustomizationPickerFragment.newInstance(isUseRevampedUi));
+                    : CustomizationPickerFragment.newInstance(
+                            isUseRevampedUi, startFromLockScreen));
         }
 
-        if (isUseRevampedUi && savedInstanceState == null) {
+        if (savedInstanceState == null) {
             // We only want to start a new undo session if this activity is brand-new. A non-new
             // activity will have a non-null savedInstanceState.
             mUndoInteractor = injector.getUndoInteractor(this);
