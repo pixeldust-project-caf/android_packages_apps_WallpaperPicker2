@@ -33,7 +33,6 @@ import com.android.wallpaper.R;
 import com.android.wallpaper.model.CustomizationSectionController;
 import com.android.wallpaper.model.CustomizationSectionController.CustomizationSectionNavigationController;
 import com.android.wallpaper.model.PermissionRequester;
-import com.android.wallpaper.model.WallpaperColorsViewModel;
 import com.android.wallpaper.model.WallpaperPreviewNavigator;
 import com.android.wallpaper.module.CustomizationSections;
 import com.android.wallpaper.module.FragmentFactory;
@@ -48,6 +47,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import kotlinx.coroutines.DisposableHandle;
+
 /** The Fragment UI for customization sections. */
 public class CustomizationPickerFragment extends AppbarFragment implements
         CustomizationSectionNavigationController {
@@ -56,6 +57,7 @@ public class CustomizationPickerFragment extends AppbarFragment implements
     private static final String SCROLL_POSITION_Y = "SCROLL_POSITION_Y";
     protected static final String KEY_IS_USE_REVAMPED_UI = "is_use_revamped_ui";
     private static final String KEY_START_FROM_LOCK_SCREEN = "start_from_lock_screen";
+    private DisposableHandle mBinding;
 
     /** Returns a new instance of {@link CustomizationPickerFragment}. */
     public static CustomizationPickerFragment newInstance(
@@ -113,16 +115,20 @@ public class CustomizationPickerFragment extends AppbarFragment implements
 
             setUpToolbarMenu(R.menu.undoable_customization_menu);
             final Bundle finalSavedInstanceState = savedInstanceState;
-            CustomizationPickerBinder.bind(
+            if (mBinding != null) {
+                mBinding.dispose();
+            }
+            mBinding = CustomizationPickerBinder.bind(
                     view,
                     getToolbarId(),
                     mViewModel,
                     this,
-                    isOnLockScreen -> getSectionControllers(
-                            isOnLockScreen
-                                    ? CustomizationSections.Screen.LOCK_SCREEN
-                                    : CustomizationSections.Screen.HOME_SCREEN,
-                            finalSavedInstanceState));
+                    isOnLockScreen -> filterAvailableSections(
+                            getSectionControllers(
+                                isOnLockScreen
+                                        ? CustomizationSections.Screen.LOCK_SCREEN
+                                        : CustomizationSections.Screen.HOME_SCREEN,
+                                finalSavedInstanceState)));
         } else {
             setContentView(view, R.layout.fragment_customization_picker);
         }
@@ -259,14 +265,10 @@ public class CustomizationPickerFragment extends AppbarFragment implements
         mSectionControllers.clear();
 
         mSectionControllers.addAll(
-                getAvailableSections(getAvailableSectionControllers(savedInstanceState)));
-    }
-
-    private List<CustomizationSectionController<?>> getAvailableSectionControllers(
-            @Nullable Bundle savedInstanceState) {
-        return getSectionControllers(
-                null,
-                savedInstanceState);
+                filterAvailableSections(
+                        getSectionControllers(
+                            null,
+                            savedInstanceState)));
     }
 
     private List<CustomizationSectionController<?>> getSectionControllers(
@@ -274,8 +276,6 @@ public class CustomizationPickerFragment extends AppbarFragment implements
             @Nullable Bundle savedInstanceState) {
         final Injector injector = InjectorProvider.getInjector();
 
-        WallpaperColorsViewModel wcViewModel = new ViewModelProvider(getActivity())
-                .get(WallpaperColorsViewModel.class);
         WallpaperQuickSwitchViewModel wallpaperQuickSwitchViewModel = new ViewModelProvider(
                 getActivity(),
                 WallpaperQuickSwitchViewModel.newFactory(
@@ -289,7 +289,7 @@ public class CustomizationPickerFragment extends AppbarFragment implements
             return sections.getAllSectionControllers(
                     getActivity(),
                     getViewLifecycleOwner(),
-                    wcViewModel,
+                    injector.getWallpaperColorsViewModel(),
                     getPermissionRequester(),
                     getWallpaperPreviewNavigator(),
                     this,
@@ -300,7 +300,7 @@ public class CustomizationPickerFragment extends AppbarFragment implements
                     screen,
                     getActivity(),
                     getViewLifecycleOwner(),
-                    wcViewModel,
+                    injector.getWallpaperColorsViewModel(),
                     getPermissionRequester(),
                     getWallpaperPreviewNavigator(),
                     this,
@@ -311,7 +311,8 @@ public class CustomizationPickerFragment extends AppbarFragment implements
         }
     }
 
-    protected List<CustomizationSectionController<?>> getAvailableSections(
+    /** Returns a filtered list containing only the available section controllers. */
+    protected List<CustomizationSectionController<?>> filterAvailableSections(
             List<CustomizationSectionController<?>> controllers) {
         return controllers.stream()
                 .filter(controller -> {

@@ -81,9 +81,12 @@
     <string name="tab_info" msgid="818614080690111416">"ସୂଚନା"</string>
     <string name="tab_customize" msgid="2533745409174959960">"କଷ୍ଟମାଇଜ୍ କରନ୍ତୁ"</string>
     <string name="tab_effects" msgid="3213606157589233901">"ଇଫେକ୍ଟଗୁଡ଼ିକ"</string>
+    <!-- no translation found for tab_share (6676269624804601227) -->
+    <skip />
     <string name="my_photos" msgid="8613021349284084982">"ମୋ ଫଟୋଗୁଡ଼ିକ"</string>
     <string name="configure_wallpaper" msgid="849882179182976621">"ସେଟିଂସ୍..."</string>
     <string name="delete_live_wallpaper" msgid="589212696102662329">"ଡିଲିଟ୍ କରନ୍ତୁ"</string>
+    <string name="edit_live_wallpaper" msgid="3132060073690558045">"ଏଡିଟ କରନ୍ତୁ"</string>
     <string name="delete_wallpaper_confirmation" msgid="1905114562243802354">"ଆପଣଙ୍କ ଡିଭାଇସରୁ ଏହି ୱାଲପେପରକୁ ଡିଲିଟ କରିବେ?"</string>
     <string name="bottom_action_bar_back" msgid="8237013112999946725">"ପଛକୁ ଫେରନ୍ତୁ"</string>
     <string name="bottom_action_bar_edit" msgid="1214742990893082138">"ଏଡିଟ କରନ୍ତୁ"</string>
@@ -116,6 +119,5 @@
     <string name="reset" msgid="4945445169532850631">"ରିସେଟ କରନ୍ତୁ"</string>
     <string name="reset_confirmation_dialog_title" msgid="3391905685838213712">"ପରିବର୍ତ୍ତନଗୁଡ଼ିକୁ ରିସେଟ କରିବେ?"</string>
     <string name="reset_confirmation_dialog_message" msgid="888669268626289603">"ଆପଣଙ୍କର ପରିବର୍ତ୍ତନଗୁଡ଼ିକୁ ସେଭ କରାଯିବ ନାହିଁ"</string>
-    <!-- no translation found for more_wallpapers (7585665124282737376) -->
-    <skip />
+    <string name="more_wallpapers" msgid="7585665124282737376">"ଅଧିକ ୱାଲପେପର"</string>
 </resources>
