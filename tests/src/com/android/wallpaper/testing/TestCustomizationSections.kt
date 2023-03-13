@@ -7,7 +7,6 @@ import com.android.wallpaper.model.CustomizationSectionController
 import com.android.wallpaper.model.PermissionRequester
 import com.android.wallpaper.model.WallpaperColorsViewModel
 import com.android.wallpaper.model.WallpaperPreviewNavigator
-import com.android.wallpaper.model.WorkspaceViewModel
 import com.android.wallpaper.module.CurrentWallpaperInfoFactory
 import com.android.wallpaper.module.CustomizationSections
 import com.android.wallpaper.picker.customization.ui.viewmodel.WallpaperQuickSwitchViewModel
@@ -20,7 +19,6 @@ class TestCustomizationSections : CustomizationSections {
         activity: FragmentActivity?,
         lifecycleOwner: LifecycleOwner?,
         wallpaperColorsViewModel: WallpaperColorsViewModel?,
-        workspaceViewModel: WorkspaceViewModel?,
         permissionRequester: PermissionRequester?,
         wallpaperPreviewNavigator: WallpaperPreviewNavigator?,
         sectionNavigationController:
@@ -37,13 +35,12 @@ class TestCustomizationSections : CustomizationSections {
         activity: FragmentActivity?,
         lifecycleOwner: LifecycleOwner?,
         wallpaperColorsViewModel: WallpaperColorsViewModel?,
-        workspaceViewModel: WorkspaceViewModel?,
         permissionRequester: PermissionRequester?,
         wallpaperPreviewNavigator: WallpaperPreviewNavigator?,
         sectionNavigationController:
             CustomizationSectionController.CustomizationSectionNavigationController?,
         savedInstanceState: Bundle?,
-        displayUtils: DisplayUtils?
+        displayUtils: DisplayUtils?,
     ): MutableList<CustomizationSectionController<*>> {
         return arrayListOf()
     }

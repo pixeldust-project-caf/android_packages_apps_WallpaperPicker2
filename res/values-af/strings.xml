@@ -84,7 +84,7 @@
     <string name="my_photos" msgid="8613021349284084982">"My foto\'s"</string>
     <string name="configure_wallpaper" msgid="849882179182976621">"Instellings …"</string>
     <string name="delete_live_wallpaper" msgid="589212696102662329">"Vee uit"</string>
-    <string name="delete_wallpaper_confirmation" msgid="33790318361863778">"Vee hierdie muurpapier op jou foon uit?"</string>
+    <string name="delete_wallpaper_confirmation" msgid="1905114562243802354">"Vee hierdie muurpapier op jou toestel uit?"</string>
     <string name="bottom_action_bar_back" msgid="8237013112999946725">"Terug"</string>
     <string name="bottom_action_bar_edit" msgid="1214742990893082138">"Wysig"</string>
     <string name="bottom_action_bar_download" msgid="3983122338076389421">"Laai af"</string>
@@ -114,9 +114,8 @@
     <string name="lock_screen_tab" msgid="6672930765010407652">"Sluitskerm"</string>
     <string name="home_screen_tab" msgid="1080445697837877526">"Tuisskerm"</string>
     <string name="reset" msgid="4945445169532850631">"Stel terug"</string>
-    <!-- no translation found for reset_confirmation_dialog_title (3391905685838213712) -->
+    <string name="reset_confirmation_dialog_title" msgid="3391905685838213712">"Stel veranderinge terug?"</string>
+    <string name="reset_confirmation_dialog_message" msgid="888669268626289603">"Jou veranderinge sal nie gestoor word nie"</string>
+    <!-- no translation found for more_wallpapers (7585665124282737376) -->
     <skip />
-    <!-- no translation found for reset_confirmation_dialog_message (888669268626289603) -->
-    <skip />
-    <string name="more_wallpapers" msgid="8116268433411881705">"Nog muurpapiere"</string>
 </resources>
