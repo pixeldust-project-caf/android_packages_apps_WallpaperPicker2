@@ -24,8 +24,8 @@ import androidx.fragment.app.Fragment
 import com.android.wallpaper.compat.WallpaperManagerCompat
 import com.android.wallpaper.config.BaseFlags
 import com.android.wallpaper.effects.EffectsController
-import com.android.wallpaper.effects.EffectsController.EffectsServiceListener
 import com.android.wallpaper.model.CategoryProvider
+import com.android.wallpaper.model.WallpaperColorsViewModel
 import com.android.wallpaper.model.WallpaperInfo
 import com.android.wallpaper.module.AlarmManagerWrapper
 import com.android.wallpaper.module.BitmapCropper
@@ -89,6 +89,7 @@ open class TestInjector : Injector {
     private var undoInteractor: UndoInteractor? = null
     private var wallpaperInteractor: WallpaperInteractor? = null
     private var wallpaperSnapshotRestorer: WallpaperSnapshotRestorer? = null
+    private var wallpaperColorsViewModel: WallpaperColorsViewModel? = null
 
     override fun getAlarmManagerWrapper(context: Context): AlarmManagerWrapper {
         return alarmManagerWrapper ?: TestAlarmManagerWrapper().also { alarmManagerWrapper = it }
@@ -133,7 +134,6 @@ open class TestInjector : Injector {
 
     override fun getEffectsController(
         context: Context,
-        listener: EffectsServiceListener
     ): EffectsController? {
         return null
     }
@@ -245,7 +245,15 @@ open class TestInjector : Injector {
     }
 
     override fun getFlags(): BaseFlags {
-        return flags ?: object : BaseFlags() {}.also { flags = it }
+        return flags
+            ?: object : BaseFlags() {
+                    override fun isFullscreenWallpaperPreviewEnabled(context: Context): Boolean {
+                        // This is already true by default in all environments, only keeping the
+                        // flag for now in case we need to roll back
+                        return true
+                    }
+                }
+                .also { flags = it }
     }
 
     override fun getUndoInteractor(context: Context): UndoInteractor {
@@ -277,5 +285,10 @@ open class TestInjector : Injector {
                     interactor = getWallpaperInteractor(context),
                 )
                 .also { wallpaperSnapshotRestorer = it }
+    }
+
+    override fun getWallpaperColorsViewModel(): WallpaperColorsViewModel {
+        return wallpaperColorsViewModel
+            ?: WallpaperColorsViewModel().also { wallpaperColorsViewModel = it }
     }
 }

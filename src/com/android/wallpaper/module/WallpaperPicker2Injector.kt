@@ -24,9 +24,9 @@ import androidx.fragment.app.Fragment
 import com.android.wallpaper.compat.WallpaperManagerCompat
 import com.android.wallpaper.config.BaseFlags
 import com.android.wallpaper.effects.EffectsController
-import com.android.wallpaper.effects.EffectsController.EffectsServiceListener
 import com.android.wallpaper.model.CategoryProvider
 import com.android.wallpaper.model.LiveWallpaperInfo
+import com.android.wallpaper.model.WallpaperColorsViewModel
 import com.android.wallpaper.model.WallpaperInfo
 import com.android.wallpaper.monitor.PerformanceMonitor
 import com.android.wallpaper.network.Requester
@@ -77,6 +77,7 @@ open class WallpaperPicker2Injector() : Injector {
     private var wallpaperInteractor: WallpaperInteractor? = null
     private var wallpaperSnapshotRestorer: WallpaperSnapshotRestorer? = null
     private var secureSettingsRepository: SecureSettingsRepository? = null
+    private var wallpaperColorsViewModel: WallpaperColorsViewModel? = null
 
     @Synchronized
     override fun getAlarmManagerWrapper(context: Context): AlarmManagerWrapper {
@@ -132,7 +133,6 @@ open class WallpaperPicker2Injector() : Injector {
 
     override fun getEffectsController(
         context: Context,
-        listener: EffectsServiceListener
     ): EffectsController? {
         return null
     }
@@ -312,6 +312,11 @@ open class WallpaperPicker2Injector() : Injector {
                     backgroundDispatcher = Dispatchers.IO,
                 )
                 .also { secureSettingsRepository = it }
+    }
+
+    override fun getWallpaperColorsViewModel(): WallpaperColorsViewModel {
+        return wallpaperColorsViewModel
+            ?: WallpaperColorsViewModel().also { wallpaperColorsViewModel = it }
     }
 
     companion object {
