@@ -32,7 +32,7 @@
     <string name="choose_a_wallpaper_section_title" msgid="1009823506890453891">"Дэлгэцийн зураг сонгох"</string>
     <string name="creative_wallpaper_title" msgid="8459226435723103934">"Дэлгэцийн зураг үүсгэх"</string>
     <string name="home_screen_message" msgid="106444102822522813">"Үндсэн нүүр"</string>
-    <string name="lock_screen_message" msgid="1534506081955058013">"Түгжигдсэн дэлгэц"</string>
+    <string name="lock_screen_message" msgid="1534506081955058013">"Түгжээтэй дэлгэц"</string>
     <string name="home_and_lock_short_label" msgid="2937922943541927983">"Нүүр хуудас болон түгжээ"</string>
     <string name="set_wallpaper_dialog_message" msgid="2110475703996853076">"Дараахад дэлгэцийн зураг тохируулах"</string>
     <string name="set_wallpaper_home_screen_destination" msgid="7315594722013109354">"Үндсэн нүүр"</string>
@@ -100,6 +100,8 @@
     <string name="wallpaper_title" msgid="6754214682228331092">"Дэлгэцийн зураг"</string>
     <string name="wallpaper_preview_card_content_description" msgid="6049261033541034584">"Дэлгэцийн зургийг урьдчилан үзэх"</string>
     <string name="collection_not_exist_msg" msgid="3504852962885064842">"Ийм цуглуулга байхгүй"</string>
+    <!-- no translation found for wallpaper_exit_split_screen (1928870664619591636) -->
+    <skip />
     <string name="cancel" msgid="4970902691067201584">"Цуцлах"</string>
     <string name="hide_ui_preview_text" msgid="6766076482511252295">"UI урьдчилан үзэлтийг нуух"</string>
     <string name="hint_hide_ui_preview" msgid="4527603797714586070">"UI-г урьдчилан үзэх дотор нуусан. Ил болгохын тулд хоёр товшино уу"</string>
@@ -115,7 +117,7 @@
     <string name="settings_snackbar_description" msgid="890168814524778486">"Тохиргоо хэсгээс файл болон мeдиаг идэвхжүүлнэ үү."</string>
     <string name="settings_snackbar_enable" msgid="5992112808061426068">"Идэвхжүүлэх"</string>
     <string name="open_my_photos" msgid="4107196465713868381">"Миний Зургийг нээх"</string>
-    <string name="lock_screen_tab" msgid="6672930765010407652">"Түгжигдсэн дэлгэц"</string>
+    <string name="lock_screen_tab" msgid="6672930765010407652">"Түгжээтэй дэлгэц"</string>
     <string name="home_screen_tab" msgid="1080445697837877526">"Үндсэн нүүр"</string>
     <string name="reset" msgid="4945445169532850631">"Шинэчлэх"</string>
     <string name="reset_confirmation_dialog_title" msgid="3391905685838213712">"Өөрчлөлтийг шинэчлэх үү?"</string>
