@@ -37,7 +37,7 @@
     <string name="set_wallpaper_dialog_message" msgid="2110475703996853076">"为以下屏幕设置壁纸："</string>
     <string name="set_wallpaper_home_screen_destination" msgid="7315594722013109354">"主屏幕"</string>
     <string name="set_wallpaper_lock_screen_destination" msgid="6224685559375417945">"锁定屏幕"</string>
-    <string name="set_wallpaper_both_destination" msgid="2536004558738350775">"主屏幕和锁定的屏幕"</string>
+    <string name="set_wallpaper_both_destination" msgid="2536004558738350775">"主屏幕和锁屏"</string>
     <string name="no_backup_image_wallpaper_label" msgid="6316627676107284851">"轮换展示图片壁纸"</string>
     <string name="permission_needed_explanation" msgid="139166837541426823">"要在这里显示当前壁纸，<xliff:g id="APP_NAME">%1$s</xliff:g>需要访问您设备的存储空间。"</string>
     <string name="permission_needed_explanation_go_to_settings" msgid="3923551582092599609">"要在这里显示当前壁纸，壁纸应用需要访问您设备的存储空间。\n\n要更改此设置，请转到壁纸应用的应用信息的“权限”部分。"</string>
@@ -100,6 +100,8 @@
     <string name="wallpaper_title" msgid="6754214682228331092">"壁纸"</string>
     <string name="wallpaper_preview_card_content_description" msgid="6049261033541034584">"壁纸预览"</string>
     <string name="collection_not_exist_msg" msgid="3504852962885064842">"该集合不存在"</string>
+    <!-- no translation found for wallpaper_exit_split_screen (1928870664619591636) -->
+    <skip />
     <string name="cancel" msgid="4970902691067201584">"取消"</string>
     <string name="hide_ui_preview_text" msgid="6766076482511252295">"隐藏界面预览"</string>
     <string name="hint_hide_ui_preview" msgid="4527603797714586070">"界面在预览中处于隐藏状态。点按两次即可取消隐藏"</string>

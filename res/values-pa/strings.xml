@@ -34,7 +34,7 @@
     <string name="home_screen_message" msgid="106444102822522813">"ਹੋਮ ਸਕ੍ਰੀਨ"</string>
     <string name="lock_screen_message" msgid="1534506081955058013">"ਲਾਕ ਸਕ੍ਰੀਨ"</string>
     <string name="home_and_lock_short_label" msgid="2937922943541927983">"ਹੋਮ ਸਕ੍ਰੀਨ ਅਤੇ ਲਾਕ ਸਕ੍ਰੀਨ"</string>
-    <string name="set_wallpaper_dialog_message" msgid="2110475703996853076">"ਵਾਲਪੇਪਰ ਵਜੋਂ ਸੈੱਟ ਕਰੋ"</string>
+    <string name="set_wallpaper_dialog_message" msgid="2110475703996853076">"ਵਾਲਪੇਪਰ ਲਈ ਸਕ੍ਰੀਨ ਚੁਣੋ"</string>
     <string name="set_wallpaper_home_screen_destination" msgid="7315594722013109354">"ਹੋਮ ਸਕ੍ਰੀਨ"</string>
     <string name="set_wallpaper_lock_screen_destination" msgid="6224685559375417945">"ਲਾਕ ਸਕ੍ਰੀਨ"</string>
     <string name="set_wallpaper_both_destination" msgid="2536004558738350775">"ਹੋਮ ਅਤੇ ਲਾਕ ਸਕ੍ਰੀਨਾਂ"</string>
@@ -100,6 +100,8 @@
     <string name="wallpaper_title" msgid="6754214682228331092">"ਵਾਲਪੇਪਰ"</string>
     <string name="wallpaper_preview_card_content_description" msgid="6049261033541034584">"ਵਾਲਪੇਪਰ ਦੀ ਪੂਰਵ-ਝਲਕ"</string>
     <string name="collection_not_exist_msg" msgid="3504852962885064842">"ਸੰਗ੍ਰਹਿ ਮੌਜੂਦ ਨਹੀਂ ਹੈ"</string>
+    <!-- no translation found for wallpaper_exit_split_screen (1928870664619591636) -->
+    <skip />
     <string name="cancel" msgid="4970902691067201584">"ਰੱਦ ਕਰੋ"</string>
     <string name="hide_ui_preview_text" msgid="6766076482511252295">"UI ਦੀ ਪੂਰਵ-ਝਲਕ ਲੁਕਾਓ"</string>
     <string name="hint_hide_ui_preview" msgid="4527603797714586070">"ਪੂਰਵ-ਝਲਕ ਵਿੱਚ UI ਨੂੰ ਲੁਕਾਇਆ ਗਿਆ ਹੈ। ਦਿਖਾਉਣ ਲਈ ਡਬਲ ਟੈਪ ਕਰੋ"</string>
