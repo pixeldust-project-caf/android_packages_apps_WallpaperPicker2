@@ -29,6 +29,8 @@
     <string name="static_wallpaper_presentation_mode_message" msgid="417940227049360906">"Trenutno nastavljeno"</string>
     <string name="rotating_wallpaper_presentation_mode_message" msgid="3361676041605733288">"Dnevno ozadje"</string>
     <string name="wallpaper_destination_both" msgid="1124197176741944063">"Začetni in zaklenjeni zaslon"</string>
+    <string name="choose_a_wallpaper_section_title" msgid="1009823506890453891">"Izberite zaslonsko ozadje"</string>
+    <string name="creative_wallpaper_title" msgid="8459226435723103934">"Ustvarite zaslonsko ozadje"</string>
     <string name="home_screen_message" msgid="106444102822522813">"Začetni zaslon"</string>
     <string name="lock_screen_message" msgid="1534506081955058013">"Zaklenjen zaslon"</string>
     <string name="home_and_lock_short_label" msgid="2937922943541927983">"Začetni in zaklenjeni zaslon"</string>
@@ -98,6 +100,8 @@
     <string name="wallpaper_title" msgid="6754214682228331092">"Zaslonsko ozadje"</string>
     <string name="wallpaper_preview_card_content_description" msgid="6049261033541034584">"Predogled zaslonskih ozadij"</string>
     <string name="collection_not_exist_msg" msgid="3504852962885064842">"Zbirka ne obstaja"</string>
+    <!-- no translation found for wallpaper_exit_split_screen (1928870664619591636) -->
+    <skip />
     <string name="cancel" msgid="4970902691067201584">"Prekliči"</string>
     <string name="hide_ui_preview_text" msgid="6766076482511252295">"Skrij predogled upor. vmesnika"</string>
     <string name="hint_hide_ui_preview" msgid="4527603797714586070">"Upor. vm. je skrit. Dvakrat se dot. za razkritje."</string>
@@ -118,6 +122,5 @@
     <string name="reset" msgid="4945445169532850631">"Ponastavi"</string>
     <string name="reset_confirmation_dialog_title" msgid="3391905685838213712">"Želite ponastaviti spremembe?"</string>
     <string name="reset_confirmation_dialog_message" msgid="888669268626289603">"Spremembe ne bodo shranjene."</string>
-    <!-- no translation found for more_wallpapers (8116268433411881705) -->
-    <skip />
+    <string name="more_wallpapers" msgid="8116268433411881705">"Več zaslonskih ozadij"</string>
 </resources>

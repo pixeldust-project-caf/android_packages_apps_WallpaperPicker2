@@ -21,10 +21,11 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.os.Bundle
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.FrameLayout
 import androidx.cardview.widget.CardView
-import androidx.core.view.isVisible
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.android.systemui.shared.clocks.shared.model.ClockPreviewConstants
@@ -35,6 +36,7 @@ import com.android.wallpaper.model.WallpaperInfo
 import com.android.wallpaper.model.WallpaperPreviewNavigator
 import com.android.wallpaper.module.CurrentWallpaperInfoFactory
 import com.android.wallpaper.module.CustomizationSections
+import com.android.wallpaper.picker.FixedWidthDisplayRatioFrameLayout
 import com.android.wallpaper.picker.customization.domain.interactor.WallpaperInteractor
 import com.android.wallpaper.picker.customization.ui.binder.ScreenPreviewBinder
 import com.android.wallpaper.picker.customization.ui.viewmodel.ScreenPreviewViewModel
@@ -57,11 +59,12 @@ open class ScreenPreviewSectionController(
     private val displayUtils: DisplayUtils,
     private val wallpaperPreviewNavigator: WallpaperPreviewNavigator,
     private val wallpaperInteractor: WallpaperInteractor,
+    private val isTwoPaneAndSmallWidth: Boolean,
 ) : CustomizationSectionController<ScreenPreviewView> {
 
     private val isOnLockScreen: Boolean = screen == CustomizationSections.Screen.LOCK_SCREEN
 
-    private lateinit var previewViewBinding: ScreenPreviewBinder.Binding
+    protected lateinit var previewViewBinding: ScreenPreviewBinder.Binding
 
     /** Override to hide the lock screen clock preview. */
     open val hideLockScreenClockPreview = false
@@ -84,6 +87,21 @@ open class ScreenPreviewSectionController(
                     R.layout.screen_preview_section,
                     /* parent= */ null,
                 ) as ScreenPreviewView
+
+        if (isTwoPaneAndSmallWidth) {
+            val previewHost =
+                view.requireViewById<FixedWidthDisplayRatioFrameLayout>(R.id.preview_host)
+            val layoutParams =
+                FrameLayout.LayoutParams(
+                    context.resources.getDimensionPixelSize(
+                        R.dimen.screen_preview_width_for_2_pane_small_width
+                    ),
+                    FrameLayout.LayoutParams.WRAP_CONTENT,
+                )
+            layoutParams.gravity = Gravity.CENTER
+            previewHost.layoutParams = layoutParams
+        }
+
         val onClickListener =
             View.OnClickListener {
                 lifecycleOwner.lifecycleScope.launch {
@@ -154,17 +172,11 @@ open class ScreenPreviewSectionController(
                         },
                         initialExtrasProvider = { getInitialExtras(isOnLockScreen) },
                         wallpaperInteractor = wallpaperInteractor,
+                        screen = screen,
                     ),
                 lifecycleOwner = lifecycleOwner,
                 offsetToStart = displayUtils.isSingleDisplayOrUnfoldedHorizontalHinge(activity),
-                screen = screen,
-                onPreviewDirty = {
-                    // only the visible view should recreate the activity so it's not done twice
-                    // TODO we can probably remove this since the previews are now separated
-                    if (previewView.isVisible) {
-                        activity.recreate()
-                    }
-                },
+                onPreviewDirty = { activity.recreate() },
             )
         return view
     }
